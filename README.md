@@ -19,7 +19,7 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
 - [x] Preparar el entorno de desarrollo PS2SDK en un contenedor docker.
 - [x] Crear un script para compilar el proyecto completo.
 - [x] Agregar la licencia MIT.
-- [ ] Crear y subir el repositorio del proyecto.
+- [x] Crear y subir el repositorio del proyecto.
 
 # Fase 2 - Personaje
 
