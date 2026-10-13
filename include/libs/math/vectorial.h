@@ -1,6 +1,3 @@
-#ifndef LIB_MATH_VECTORIAL_CALC_H
-#define LIB_MATH_VECTORIAL_CALC_H
-
 /**
  * @file lib_math_vectorial_calc.h
  * @brief Inline 2D vector mathematical operations optimized for the PlayStation 2 (Emotion Engine).
@@ -8,6 +5,11 @@
  *          high-performance, branchless inline functions designed to avoid stack copies
  *          and pipeline stalls on MIPS architectures.
  */
+
+#ifndef LIB_MATH_VECTORIAL_CALC_H
+#define LIB_MATH_VECTORIAL_CALC_H
+
+
 
 #include <math.h>
 
@@ -20,35 +22,35 @@
  *
  * @par Use cases:
  *
- * - **For point coordinates:**
+ * **For point coordinates:**
  *   ```c
  *   float point[2] = { v.x, v.y };
  *   ```
  *
- * - **For texture coordinates:**
+ * **For texture coordinates:**
  *   ```c
  *   float texel[2] = { v.u * tex->w, v.v * tex->h };
  *   ```
  *
- * - **For general pair float use cases:**
+ * **For general pair float use cases:**
  *   ```c
  *   float pair[2] = { v.a, v.b };
  *   ```
  */
 typedef union
 {
-    float raw[2]; /**< Acceso por índice [0, 1]. */
+    float raw[2]; /**< Index-based access [0, 1]. */
     struct
     {
-        float x, y; /**< Coordenadas espaciales. */
+        float x, y; /**< Spatial coordinates. */
     };
     struct
     {
-        float u, v; /**< Coordenadas de textura. */
+        float u, v; /**< Texture coordinates. */
     };
     struct
     {
-        float a, b; /**< Componentes de par genérico. */
+        float a, b; /**< Generic pair components. */
     };
 } vec2f;
 
