@@ -79,6 +79,8 @@ static bool init_render(int width, int height)
 
     screen_pitch = screen_surface->pitch >> 2;
 
+    SDL_ShowCursor(SDL_DISABLE);
+
     printf("SDL1 successfully initialized on PS2!\n");
 
     game_running = true;

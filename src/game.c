@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
         clear_screen();
 
-        draw_fill_circle( &center, 1, RGB(255, 0, 0) );
+        draw_fill_circle( &center, 128, RGB(255, 0, 0) );
 
         draw();
     }
