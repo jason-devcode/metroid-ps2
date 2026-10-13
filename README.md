@@ -1,6 +1,6 @@
 # Metroid Fan-Game
 
-# Requisitos
+## Requisitos - Historias de usuario
 
 Como jugador quiero controlar a un personaje basado en el personaje de Samus Aran utilizando el traje que usaba el SA-X en el juego de Metroid Fusión.
 
@@ -14,28 +14,26 @@ Los tiles tendrán tamaños fijos de 16x16 pixeles.
 
 Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus ejes X y Y.
 
-# Fase 1 - Preparar el proyecto base
+## Fase 1 - Preparar el proyecto base
 
 - [x] Preparar el entorno de desarrollo PS2SDK en un contenedor docker.
 - [x] Crear un script para compilar el proyecto completo.
 - [x] Agregar la licencia MIT.
 - [x] Crear y subir el repositorio del proyecto.
 
-# Fase 2 - Personaje
+## Fase 2 - Personaje
 
-1. Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
-2. Desarrollar una máquina de estados para las entidades.
-3. Darle el aspecto visual a las entidades, colocarle un sprite del SA-X en estado idle al personaje.
-4. Animar al personaje, hacer que se reproduzcan animaciones de sprites del personaje.
-5. Reproducir animaciones en relación al estado del personaje.
-
+- [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
+- [ ] Desarrollar una máquina de estados para las entidades.
+- [ ] Darle el aspecto visual a las entidades, colocarle un sprite del SA-X en estado idle al personaje.
+- [ ] Animar al personaje, hacer que se reproduzcan animaciones de sprites del personaje.
+- [ ] Reproducir animaciones en relación al estado del personaje.
 
 ## Conceptos
 
 ### ¿Qué es un tile?
 
 Bajo el contexto de los videojuegos 2D podemos entender un tile/mosaico como una celda en una grilla o tabla la cual tiene propiedades especiales, estas propiedades definen su aspecto visual (textura), como reacciona cuando otros objetos interactuan con esta celda (colisiones), sus fisicas (si el tile tiene alguna componente de fisica) y como evoluciona a medida que fluye el juego. 
-
 
 ### ¿Qué es un tilemap?
 
