@@ -11,8 +11,8 @@ INCLUDE_LIBS = $(CURDIR)/include
 OBJ_DIR = obj
 EE_OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(C_FILES))
 
-# Rutas de inclusión de cabeceras (puertos SDL1 y gsKit)
-EE_CFLAGS += -O3 -I$(INCLUDE_LIBS) -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/SDL -I$(GSKIT)/include
+# Rutas de inclusión de cabeceras, añadiendo -MMD -MP para generar dependencias automáticas
+EE_CFLAGS += -O3 -MMD -MP -I$(INCLUDE_LIBS) -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/SDL -I$(GSKIT)/include
 
 # Rutas de librerías estáticas
 EE_LDFLAGS += -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib
@@ -32,6 +32,9 @@ $(EE_BIN): $(EE_OBJS)
 	@mkdir -p $(dir $@)
 	$(EE_CC) -o $@ $(EE_OBJS) $(EE_LDFLAGS) $(EE_LIBS)
 	$(EE_STRIP) --strip-all $@
+
+# Incluir automáticamente los archivos de dependencia (.d) generados por GCC
+-include $(EE_OBJS:.o=.d)
 
 clean:
 	rm -rf $(EE_BIN) $(OBJ_DIR)
