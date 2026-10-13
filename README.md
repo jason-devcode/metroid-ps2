@@ -21,9 +21,8 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
 - [x] Agregar la licencia MIT.
 - [x] Crear y subir el repositorio del proyecto.
 
-## Fase 2 - Personaje
-
-- [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
+## Fase 2 - Turing Engine PS2
+- [ ] Desarrollar las utilidades del motor del juego para cumplir los requisitos minimos de las historias de usuario.
     - [x] Desarrollar un sistema básico de calculos vectoriales 2D.
         - [X] Crear un directorio llamado libs en el directorio include.
         - [X] Crear un directorio llamado math dentro del directorio libs.
@@ -40,13 +39,22 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
             - [x] Normalizar un vector.
             - [x] Interpolación lineal entre 2 vectores.
         - [X] Hacer que la librería sea utilizable desde cualquier fichero fuente .c.
+    - [x] Crear una librería render que ofreca las siguientes funcionalidades:
+        - [x] Inicializar el motor de vídeo de SDL.
+        - [x] Desactivar el cursor en pantalla.
+        - [x] Inicializar el framebuffer.
+        - [x] Dibujar el framebuffer a travé de Doble-Buffering.
+        - [x] Liberar recursos utilizados.
+        - [x] Gestión de colores y propiedades del sistema de vídeo.
+
+## Fase 3 - Entidades
+- [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
     - [x] Crear una estructura Entity.
-    - [ ] Crear una estructura de física.
-    
-- [ ] Desarrollar una máquina de estados para las entidades.
-- [ ] Darle el aspecto visual a las entidades, colocarle un sprite del SA-X en estado idle al personaje.
-- [ ] Animar al personaje, hacer que se reproduzcan animaciones de sprites del personaje.
-- [ ] Reproducir animaciones en relación al estado del personaje.
+    - [ ] Crear una estructura de física.    
+    - [ ] Desarrollar una máquina de estados para las entidades.
+    - [ ] Darle el aspecto visual a las entidades, colocarle un sprite del SA-X en estado idle al personaje.
+    - [ ] Animar al personaje, hacer que se reproduzcan animaciones de sprites del personaje.
+    - [ ] Reproducir animaciones en relación al estado del personaje.
 
 ## Conceptos
 

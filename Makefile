@@ -12,7 +12,7 @@ OBJ_DIR = obj
 EE_OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(C_FILES))
 
 # Rutas de inclusión de cabeceras, añadiendo -MMD -MP para generar dependencias automáticas
-EE_CFLAGS += -O3 -MMD -MP -I$(INCLUDE_LIBS) -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/SDL -I$(GSKIT)/include
+EE_CFLAGS += -MMD -MP -I$(INCLUDE_LIBS) -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/SDL -I$(GSKIT)/include
 
 # Rutas de librerías estáticas
 EE_LDFLAGS += -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib
