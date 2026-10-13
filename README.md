@@ -24,7 +24,11 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
 ## Fase 2 - Personaje
 
 - [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
+    - [ ] Desarrollar un sistema básico de calculos vectoriales 2D.
+        - [ ] Crear un directorio llamado libs en el directorio include.
+        - [ ] Crear una estructura vec2f.
     - [x] Crear una estructura Entity.
+    - [ ] Crear una estructura de física.
     
 - [ ] Desarrollar una máquina de estados para las entidades.
 - [ ] Darle el aspecto visual a las entidades, colocarle un sprite del SA-X en estado idle al personaje.
