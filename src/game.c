@@ -1,6 +1,8 @@
 #include <SDL.h>
 #include <stdio.h>
 
+#include <libs/math/vectorial.h>
+
 int main(int argc, char *argv[]) {
     // Inicializar SDL con soporte de vídeo
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {

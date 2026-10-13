@@ -4,12 +4,15 @@ EE_BIN = builds/metroid.elf
 SRC_DIRS = src
 C_FILES = $(shell find $(SRC_DIRS) -type f -name '*.c')
 
+# Ruta de inclusión local (usando CURDIR para evitar errores de sintaxis en el shell)
+INCLUDE_LIBS = $(CURDIR)/include
+
 # Mapear los archivos .c a objetos .o dentro de una carpeta separada (obj/)
 OBJ_DIR = obj
 EE_OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(C_FILES))
 
 # Rutas de inclusión de cabeceras (puertos SDL1 y gsKit)
-EE_CFLAGS += -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/SDL -I$(GSKIT)/include
+EE_CFLAGS += -O3 -I$(INCLUDE_LIBS) -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/SDL -I$(GSKIT)/include
 
 # Rutas de librerías estáticas
 EE_LDFLAGS += -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib

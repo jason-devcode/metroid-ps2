@@ -24,11 +24,22 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
 ## Fase 2 - Personaje
 
 - [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
-    - [ ] Desarrollar un sistema básico de calculos vectoriales 2D.
+    - [x] Desarrollar un sistema básico de calculos vectoriales 2D.
         - [X] Crear un directorio llamado libs en el directorio include.
         - [X] Crear un directorio llamado math dentro del directorio libs.
         - [X] Crear un fichero de cabecera llamado vectorial.h
-        - [X] Crear una estructura vec2f.
+        - [X] Crear una estructura vec2f, dicha estructura se utilizará para representar posiciones, direcciones, velocidades, coordenadas de textura, etc.
+        - [x] Crear el set de funciones para realizar operaciones ariméticas y vectoriale que reciban 2 vectores vec2f y generen el resultado en un tercer vector:
+            - [x] Suma.
+            - [x] Resta.
+            - [x] Multiplicación.
+            - [x] Multiplicar un vector por un escalar.
+            - [x] Calcular el producto punto.
+            - [x] Calcular la magnitud cuadrática de un vector.
+            - [x] Calcular la magnitud de un vector.
+            - [x] Normalizar un vector.
+            - [x] Interpolación lineal entre 2 vectores.
+        - [X] Hacer que la librería sea utilizable desde cualquier fichero fuente .c.
     - [x] Crear una estructura Entity.
     - [ ] Crear una estructura de física.
     
