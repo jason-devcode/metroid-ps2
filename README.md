@@ -25,8 +25,10 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
 
 - [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
     - [ ] Desarrollar un sistema básico de calculos vectoriales 2D.
-        - [ ] Crear un directorio llamado libs en el directorio include.
-        - [ ] Crear una estructura vec2f.
+        - [X] Crear un directorio llamado libs en el directorio include.
+        - [X] Crear un directorio llamado math dentro del directorio libs.
+        - [X] Crear un fichero de cabecera llamado vectorial.h
+        - [X] Crear una estructura vec2f.
     - [x] Crear una estructura Entity.
     - [ ] Crear una estructura de física.
     
