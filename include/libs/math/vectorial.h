@@ -9,8 +9,6 @@
 #ifndef LIB_MATH_VECTORIAL_CALC_H
 #define LIB_MATH_VECTORIAL_CALC_H
 
-
-
 #include <math.h>
 
 /**

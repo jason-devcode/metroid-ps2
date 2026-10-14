@@ -25,25 +25,25 @@
 #define RGB(r, g, b) (0xFF000000 | (((b & 0xFF) << 16) | ((g & 0xFF) << 8) | ((r & 0xFF) << 0)))
 
 /** @brief Pitch of the screen surface scaled for 32-bit pixel offsets. */
-int screen_pitch = 0;
+static int screen_pitch = 0;
 
 /** @brief Current display width in pixels. */
-int screen_width = 0;
+static int screen_width = 0;
 
 /** @brief Current display height in pixels. */
-int screen_height = 0;
+static int screen_height = 0;
 
 /** @brief Default color used when clearing the screen. */
-uint32_t clear_screen_color = RGB(15, 25, 45);
+static uint32_t clear_screen_color = RGB(15, 25, 45);
 
 /** @brief Global flag indicating whether the game/render loop is currently active. */
-bool game_running = false;
+static bool game_running = false;
 
 /** @brief Direct pointer to the hardware surface pixel buffer (framebuffer). */
-uint32_t *framebuffer = NULL;
+static uint32_t *framebuffer = NULL;
 
 /** @brief Main SDL video surface handle. */
-SDL_Surface *screen_surface = NULL;
+static SDL_Surface *screen_surface = NULL;
 
 /**
  * @brief Initializes the rendering subsystem with hardware acceleration.

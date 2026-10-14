@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/common",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/ee",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/iop",
+                "/usr/include/SDL"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
