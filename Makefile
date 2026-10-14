@@ -16,7 +16,7 @@ EE_CC = mips64r5900el-ps2-elf-gcc
 EE_STRIP = mips64r5900el-ps2-elf-strip
 
 # Flags de compilación e inclusión de cabeceras
-EE_CFLAGS = -D_EE -G0 -O2 -Wall -Wno-unused-function -gdwarf-2 -gz -MMD -MP \
+EE_CFLAGS = -D_EE -G0 -O3 -Wall -Wno-unused-function -gdwarf-2 -gz -MMD -MP \
             -I$(INCLUDE_LIBS) \
             -I$(PS2SDK)/ports/include \
             -I$(PS2SDK)/ports/include/SDL \

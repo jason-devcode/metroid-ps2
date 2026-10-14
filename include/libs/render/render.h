@@ -1,7 +1,7 @@
 /**
  * @file render.h
  * @brief CPU framebuffer + GPU hardware accelerated rendering library using gsKit for PlayStation 2.
- * @details Leverages a CPU-side software framebuffer uploaded dynamically as a texture via gsKit for hardware-accelerated presentation.
+ * @details Fixes framebuffer persistence trails by clearing the CPU buffer alongside hardware presentation.
  */
 
 #ifndef LIB_RENDER_H
@@ -20,10 +20,6 @@
 
 /**
  * @brief Packs red, green, and blue components into a 32-bit color integer (ABGR format for GS).
- * @param r Red component (0-255).
- * @param g Green component (0-255).
- * @param b Blue component (0-255).
- * @return Packed 32-bit color value (`uint32_t`).
  */
 #define RGB(r, g, b) (0xFF000000 | (((b & 0xFF) << 16) | ((g & 0xFF) << 8) | ((r & 0xFF) << 0)))
 
@@ -36,25 +32,37 @@ static int screen_width = 0;
 /** @brief Current display height in pixels. */
 static int screen_height = 0;
 
-/** @brief Default color used when clearing the screen. */
+/** @brief Default color used when clearing the screen (ABGR format for CPU framebuffer). */
 static uint32_t clear_screen_color = RGB(25, 25, 25);
+
+/** @brief Default color used when clearing the screen in hardware GS format. */
+static uint64_t gs_clear_color = 0;
 
 /** @brief Global flag indicating whether the game/render loop is currently active. */
 static bool game_running = false;
 
 /** @brief Direct pointer to the CPU framebuffer pixel buffer. */
 static uint32_t *framebuffer = NULL;
+static uint32_t *clear_row_buffer = NULL;
 
 // --- Contexto interno de gsKit y DMA ---
 static GSGLOBAL *gs_global = NULL;
 static GSTEXTURE render_texture;
-static uint32_t *clear_row_buffer = NULL;
+
+/**
+ * @brief Converts a 32-bit ABGR color to gsKit internal RGBAQ format.
+ */
+static inline uint64_t pack_gs_color(uint32_t color)
+{
+    unsigned char r = (color >> 0) & 0xFF;
+    unsigned char g = (color >> 8) & 0xFF;
+    unsigned char b = (color >> 16) & 0xFF;
+    unsigned char a = (color >> 24) & 0xFF;
+    return GS_SETREG_RGBAQ(r >> 1, g >> 1, b >> 1, a >> 1, 0x00);
+}
 
 /**
  * @brief Initializes the rendering subsystem using gsKit and dmaKit.
- * @param width Desired screen width in pixels.
- * @param height Desired screen height in pixels.
- * @return `true` if initialization succeeded, `false` otherwise.
  */
 static bool init_render(int width, int height)
 {
@@ -81,9 +89,9 @@ static bool init_render(int width, int height)
 
     screen_width = width;
     screen_height = height;
-    screen_pitch = width; // Mapeo directo 1:1
+    screen_pitch = width;
 
-    // 3. Crear el framebuffer en memoria de CPU alineado a 64 bytes usando uint32_t
+    // 3. Crear el framebuffer en memoria de CPU alineado a 64 bytes
     framebuffer = (uint32_t *)memalign(64, width * height * sizeof(uint32_t));
     if (!framebuffer)
     {
@@ -91,7 +99,7 @@ static bool init_render(int width, int height)
         return false;
     }
 
-    // 4. Crear una línea de borrado rápido optimizada con memcpy
+    // 4. Crear una línea de borrado rápido para la CPU optimizada con memcpy
     clear_row_buffer = (uint32_t *)memalign(64, width * sizeof(uint32_t));
     if (clear_row_buffer)
     {
@@ -101,7 +109,10 @@ static bool init_render(int width, int height)
         }
     }
 
-    // 5. Configurar la textura vinculada al búfer de CPU (con cast explícito a u32* para gsKit)
+    // 5. Configurar colores de limpieza
+    gs_clear_color = pack_gs_color(clear_screen_color);
+
+    // 6. Configurar la textura vinculada al búfer de CPU
     render_texture.Width = width;
     render_texture.Height = height;
     render_texture.PSM = GS_PSM_CT32;
@@ -118,11 +129,12 @@ static bool init_render(int width, int height)
 
 /**
  * @brief Sets a new default background clear color.
- * @param color Packed 32-bit color value.
  */
 static void set_clear_screen_color(uint32_t color) 
 {
     clear_screen_color = color;
+    gs_clear_color = pack_gs_color(color);
+
     if (clear_row_buffer && screen_width > 0)
     {
         for (int x = 0; x < screen_width; x++)
@@ -133,7 +145,7 @@ static void set_clear_screen_color(uint32_t color)
 }
 
 /**
- * @brief Clears the CPU framebuffer using fast row-by-row memcpy.
+ * @brief Clears the CPU-side framebuffer using fast row-by-row memcpy to prevent trails.
  */
 static void clear_screen()
 {
@@ -146,20 +158,20 @@ static void clear_screen()
 }
 
 /**
- * @brief Uploads texture to VRAM, renders hardware quad, and swaps buffers.
+ * @brief Clears screen via hardware, uploads texture, renders, and swaps buffers.
  */
 static void draw()
 {
     if (!gs_global || !game_running) return;
 
-    // Sincronizar con VSync real para 60 FPS estables y sin parpadeos
-    gsKit_vsync_wait();
+    // 1. Limpiar el búfer oculto en VRAM por hardware
+    gsKit_clear(gs_global, gs_clear_color);
 
-    // Subir la textura modificada por la CPU hacia la VRAM
+    // 2. Subir la textura modificada por la CPU hacia la VRAM
     gsKit_texture_upload(gs_global, &render_texture);
     dmaKit_wait_fast();
 
-    // Renderizar quad a pantalla completa por hardware
+    // 3. Renderizar el quad de la textura a pantalla completa por hardware
     gsKit_prim_sprite_texture(gs_global, &render_texture,
                               0.0f, 0.0f,
                               0.0f, 0.0f,
@@ -168,7 +180,7 @@ static void draw()
                               0,
                               GS_SETREG_RGBAQ(128, 128, 128, 0x80, 0x00));
 
-    // Ejecutar cola y voltear búferes de hardware
+    // 4. Ejecutar cola de comandos y voltear búferes de hardware sincronizados con VSync
     gsKit_queue_exec(gs_global);
     gsKit_sync_flip(gs_global);
 }
