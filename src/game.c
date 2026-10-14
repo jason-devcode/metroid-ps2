@@ -56,8 +56,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    SDL_Event event;
-
     Particle m = {
         .pos = {{ WIDTH / 2.0f, HEIGHT / 2.0f }},
         .vel = {{ 950.0f, 0.0f }},
@@ -69,12 +67,6 @@ int main(int argc, char *argv[])
     while (game_running)
     {
         update_deltatime();
-
-        while (SDL_PollEvent(&event))
-        {
-            if (event.type == SDL_QUIT)
-                break;
-        }
 
         clear_screen();
 

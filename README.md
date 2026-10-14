@@ -46,6 +46,7 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
         - [x] Dibujar el framebuffer a travé de Doble-Buffering.
         - [x] Liberar recursos utilizados.
         - [x] Gestión de colores y propiedades del sistema de vídeo.
+    - [x] Crear una librería que ofrezca las utilidades necesarias para calcular el deltatime de cada frame.
 
 ## Fase 3 - Entidades
 - [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
