@@ -203,27 +203,39 @@ static bool create_ci8_texture(GSTEXTURE *texture, int width, int height, const 
 }
 
 /**
- * @brief Registers a textured quad to be drawn in the current frame batch.
+ * @brief Registers a textured quad to be drawn in the current frame batch with optional texture flipping.
  * @param x X coordinate on screen.
  * @param y Y coordinate on screen.
  * @param w Width on screen.
  * @param h Height on screen.
+ * @param u1 Source texture top-left U coordinate.
+ * @param v1 Source texture top-left V coordinate.
+ * @param u2 Source texture bottom-right U coordinate.
+ * @param v2 Source texture bottom-right V coordinate.
+ * @param flip_x Flag to horizontally flip the texture.
+ * @param flip_y Flag to vertically flip the texture.
  * @param color Tint color in 32-bit ABGR format.
  * @param texture Pointer to the texture to apply.
  */
-static void render_quad(float x, float y, float w, float h, float u1, float v1, float u2, float v2, uint32_t color, GSTEXTURE *texture)
+static void render_quad(float x, float y, float w, float h, float u1, float v1, float u2, float v2, bool flip_x, bool flip_y, uint32_t color, GSTEXTURE *texture)
 {
     if (quad_batch_count >= MAX_BATCH_QUADS) return;
+
+    /* Invert UV coordinates if flipping flags are active */
+    float final_u1 = flip_x ? u2 : u1;
+    float final_u2 = flip_x ? u1 : u2;
+    float final_v1 = flip_y ? v2 : v1;
+    float final_v2 = flip_y ? v1 : v2;
 
     RenderQuad *q = &quad_batch[quad_batch_count++];
     q->x = x;
     q->y = y;
     q->w = w;
     q->h = h;
-    q->u1 = u1;
-    q->v1 = v1;
-    q->u2 = u2;
-    q->v2 = v2;
+    q->u1 = final_u1;
+    q->v1 = final_v1;
+    q->u2 = final_u2;
+    q->v2 = final_v2;
     q->color = color;
     q->texture = texture;
 }

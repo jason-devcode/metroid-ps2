@@ -87,6 +87,7 @@ EE_LDFLAGS = \
 EE_LIBS = \
     -lSDL \
     -lgskit \
+    -lpad \
     -lgskit_toolkit \
     -ldmakit \
     -laudsrv \

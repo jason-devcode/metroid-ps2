@@ -40,12 +40,13 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
             - [x] Interpolación lineal entre 2 vectores.
         - [X] Hacer que la librería sea utilizable desde cualquier fichero fuente .c.
     - [x] Crear una librería render que ofreca las siguientes funcionalidades:
-        - [x] Inicializar el motor de vídeo de SDL.
+        - [x] Inicializar el motor de vídeo a través de dmaKit y gsKit.
         - [x] Desactivar el cursor en pantalla.
         - [x] Inicializar el framebuffer.
         - [x] Dibujar el framebuffer a travé de Doble-Buffering.
         - [x] Liberar recursos utilizados.
         - [x] Gestión de colores y propiedades del sistema de vídeo.
+    - [x] Implementar el sistema de inicialización y captura de inputs del control.
     - [x] Crear una librería que ofrezca las utilidades necesarias para calcular el deltatime de cada frame.
 
 ## Fase 3 - Entidades
