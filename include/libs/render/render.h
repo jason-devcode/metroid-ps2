@@ -163,7 +163,7 @@ static bool create_texture(GSTEXTURE *texture, int width, int height, uint32_t *
  * @param color Tint color in 32-bit ABGR format.
  * @param texture Pointer to the texture to apply.
  */
-static void render_quad(float x, float y, float w, float h, uint32_t color, GSTEXTURE *texture)
+static void render_quad(float x, float y, float w, float h, float u1, float v1, float u2, float v2, uint32_t color, GSTEXTURE *texture)
 {
     if (quad_batch_count >= MAX_BATCH_QUADS) return;
 
@@ -172,10 +172,10 @@ static void render_quad(float x, float y, float w, float h, uint32_t color, GSTE
     q->y = y;
     q->w = w;
     q->h = h;
-    q->u1 = 0.0f;
-    q->v1 = 0.0f;
-    q->u2 = (float)texture->Width;
-    q->v2 = (float)texture->Height;
+    q->u1 = u1;
+    q->v1 = v1;
+    q->u2 = u2;
+    q->v2 = v2;
     q->color = color;
     q->texture = texture;
 }
