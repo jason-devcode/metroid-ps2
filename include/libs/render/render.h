@@ -155,6 +155,54 @@ static bool create_texture(GSTEXTURE *texture, int width, int height, uint32_t *
 }
 
 /**
+ * @brief Crea y asigna VRAM para una textura CI8 (T8) nativa con su paleta (CLUT).
+ * @param texture Puntero a la estructura GSTEXTURE.
+ * @param width Ancho de la textura en píxeles.
+ * @param height Alto de la textura en píxeles.
+ * @param indices Puntero al array de índices de 1 byte.
+ * @param palette Puntero al array de colores de la paleta en formato ABGR (32-bit).
+ * @return True si la asignación y subida tienen éxito, false en caso contrario.
+ */
+static bool create_ci8_texture(GSTEXTURE *texture, int width, int height, const uint8_t *indices, const uint32_t *palette)
+{
+    memset(texture, 0, sizeof(GSTEXTURE));
+
+    texture->Width = width;
+    texture->Height = height;
+    texture->PSM = GS_PSM_T8;          // Formato indexado de 8 bits (1 byte por píxel)
+    texture->ClutPSM = GS_PSM_CT32;    // Paleta en formato de color real de 32 bits (ABGR)
+    texture->TBW = (width + 63) / 64;  // Ancho de búfer de textura para T8
+    
+    // Asignar punteros en memoria de EE
+    texture->Mem = (u32 *)indices;
+    texture->Clut = (u32 *)palette;
+    
+    texture->Filter = GS_FILTER_NEAREST; // Filtro Nearest para evitar interpolación borrosa/con ruido
+    texture->ClutStorageMode = GS_CLUT_STORAGE_CSM1; // Modo de almacenamiento CSM1 estándar para evitar corrupción de paleta en T8
+    texture->Delayed = 0;
+
+    // 1. Asignar VRAM para los índices de la textura T8
+    texture->Vram = gsKit_vram_alloc(gs_global, gsKit_texture_size(width, height, GS_PSM_T8), GSKIT_ALLOC_USERBUFFER);
+    if (texture->Vram == GSKIT_ALLOC_ERROR) {
+        printf("Error al asignar VRAM para la textura CI8!\n");
+        return false;
+    }
+
+    // 2. Asignar VRAM para la CLUT (bloque de 16x16 en CT32)
+    texture->VramClut = gsKit_vram_alloc(gs_global, gsKit_texture_size(16, 16, GS_PSM_CT32), GSKIT_ALLOC_USERBUFFER);
+    if (texture->VramClut == GSKIT_ALLOC_ERROR) {
+        printf("Error al asignar VRAM para la CLUT de la textura CI8!\n");
+        return false;
+    }
+
+    // 3. Subir índices y paleta al GS
+    gsKit_texture_upload(gs_global, texture);
+    dmaKit_wait_fast();
+
+    return true;
+}
+
+/**
  * @brief Registers a textured quad to be drawn in the current frame batch.
  * @param x X coordinate on screen.
  * @param y Y coordinate on screen.
