@@ -124,9 +124,9 @@ if [[ "$RUN_EMULATOR" == "true" ]]; then
     if [[ -n "$PCSX2_BIN" ]]; then
         log "Iniciando PCSX2 con el ELF generado..."
         if [[ "$PCSX2_BIN" == "flatpak" ]]; then
-            flatpak run net.pcsx2.PCSX2 --elf="$DESTINATION_PATH" --nogui >/dev/null 2>&1 &
+            flatpak run net.pcsx2.PCSX2 -nogui -elf "$DESTINATION_PATH" >/dev/null 2>&1 &
         else
-            "$PCSX2_BIN" --elf="$DESTINATION_PATH" --nogui >/dev/null 2>&1 &
+            "$PCSX2_BIN" -nogui -elf "$DESTINATION_PATH" >/dev/null 2>&1 &
         fi
     else
         log "Aviso: No se encontró PCSX2 en el sistema. Se omite el lanzamiento del emulador."
