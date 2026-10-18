@@ -44,12 +44,13 @@ static GSGLOBAL *gs_global = NULL;
 /**
  * @brief Structure representing a renderable textured quad in the batch system.
  */
-typedef struct {
-    float x, y;             /**< Screen position coordinates. */
-    float w, h;             /**< Screen width and height. */
-    float u1, v1, u2, v2;   /**< Texture UV coordinates. */
-    uint32_t color;         /**< Tint color in ABGR format. */
-    GSTEXTURE *texture;     /**< Pointer to the texture to use. */
+typedef struct
+{
+    float x, y;           /**< Screen position coordinates. */
+    float w, h;           /**< Screen width and height. */
+    float u1, v1, u2, v2; /**< Texture UV coordinates. */
+    uint32_t color;       /**< Tint color in ABGR format. */
+    GSTEXTURE *texture;   /**< Pointer to the texture to use. */
 } RenderQuad;
 
 /** @brief Static quad buffer for the current frame's batched draw call. */
@@ -120,86 +121,9 @@ static bool init_render(int width, int height)
  * @brief Sets a new default background clear color.
  * @param color The new color in 32-bit ABGR format.
  */
-static void set_clear_screen_color(uint32_t color) 
+static void set_clear_screen_color(uint32_t color)
 {
     gs_clear_color = pack_gs_color(color);
-}
-
-/**
- * @brief Creates and allocates VRAM for a custom texture (e.g., procedural shapes).
- * @param texture Pointer to the GSTEXTURE structure.
- * @param width Texture width in pixels.
- * @param height Texture height in pixels.
- * @param pixels Pointer to the source pixel data.
- * @return True if creation and VRAM allocation succeed, false otherwise.
- */
-static bool create_texture(GSTEXTURE *texture, int width, int height, uint32_t *pixels)
-{
-    texture->Width = width;
-    texture->Height = height;
-    texture->PSM = GS_PSM_CT32;
-    texture->Mem = (u32 *)pixels; 
-    texture->Filter = GS_FILTER_NEAREST;
-    texture->TBW = (width + 63) / 64;
-    
-    texture->Vram = gsKit_vram_alloc(gs_global, gsKit_texture_size(width, height, GS_PSM_CT32), GSKIT_ALLOC_USERBUFFER);
-    
-    if (texture->Vram == GSKIT_ALLOC_ERROR) {
-        printf("Error allocating VRAM for texture!\n");
-        return false;
-    }
-
-    gsKit_texture_upload(gs_global, texture);
-    dmaKit_wait_fast();
-    return true;
-}
-
-/**
- * @brief Crea y asigna VRAM para una textura CI8 (T8) nativa con su paleta (CLUT).
- * @param texture Puntero a la estructura GSTEXTURE.
- * @param width Ancho de la textura en píxeles.
- * @param height Alto de la textura en píxeles.
- * @param indices Puntero al array de índices de 1 byte.
- * @param palette Puntero al array de colores de la paleta en formato ABGR (32-bit).
- * @return True si la asignación y subida tienen éxito, false en caso contrario.
- */
-static bool create_ci8_texture(GSTEXTURE *texture, int width, int height, const uint8_t *indices, const uint32_t *palette)
-{
-    memset(texture, 0, sizeof(GSTEXTURE));
-
-    texture->Width = width;
-    texture->Height = height;
-    texture->PSM = GS_PSM_T8;          // Formato indexado de 8 bits (1 byte por píxel)
-    texture->ClutPSM = GS_PSM_CT32;    // Paleta en formato de color real de 32 bits (ABGR)
-    texture->TBW = (width + 63) / 64;  // Ancho de búfer de textura para T8
-    
-    // Asignar punteros en memoria de EE
-    texture->Mem = (u32 *)indices;
-    texture->Clut = (u32 *)palette;
-    
-    texture->Filter = GS_FILTER_NEAREST; // Filtro Nearest para evitar interpolación borrosa/con ruido
-    texture->ClutStorageMode = GS_CLUT_STORAGE_CSM1; // Modo de almacenamiento CSM1 estándar para evitar corrupción de paleta en T8
-    texture->Delayed = 0;
-
-    // 1. Asignar VRAM para los índices de la textura T8
-    texture->Vram = gsKit_vram_alloc(gs_global, gsKit_texture_size(width, height, GS_PSM_T8), GSKIT_ALLOC_USERBUFFER);
-    if (texture->Vram == GSKIT_ALLOC_ERROR) {
-        printf("Error al asignar VRAM para la textura CI8!\n");
-        return false;
-    }
-
-    // 2. Asignar VRAM para la CLUT (bloque de 16x16 en CT32)
-    texture->VramClut = gsKit_vram_alloc(gs_global, gsKit_texture_size(16, 16, GS_PSM_CT32), GSKIT_ALLOC_USERBUFFER);
-    if (texture->VramClut == GSKIT_ALLOC_ERROR) {
-        printf("Error al asignar VRAM para la CLUT de la textura CI8!\n");
-        return false;
-    }
-
-    // 3. Subir índices y paleta al GS
-    gsKit_texture_upload(gs_global, texture);
-    dmaKit_wait_fast();
-
-    return true;
 }
 
 /**
@@ -219,7 +143,8 @@ static bool create_ci8_texture(GSTEXTURE *texture, int width, int height, const 
  */
 static void render_quad(float x, float y, float w, float h, float u1, float v1, float u2, float v2, bool flip_x, bool flip_y, uint32_t color, GSTEXTURE *texture)
 {
-    if (quad_batch_count >= MAX_BATCH_QUADS) return;
+    if (quad_batch_count >= MAX_BATCH_QUADS)
+        return;
 
     /* Invert UV coordinates if flipping flags are active */
     float final_u1 = flip_x ? u2 : u1;
@@ -253,7 +178,8 @@ static void begin_frame()
  */
 static void draw()
 {
-    if (!gs_global || !game_running) return;
+    if (!gs_global || !game_running)
+        return;
 
     gsKit_queue_reset(gs_global->CurQueue);
 
@@ -264,14 +190,13 @@ static void draw()
     gsKit_set_primalpha(
         gs_global,
         GS_SETREG_ALPHA(0, 1, 0, 1, 0),
-        0
-    );
+        0);
 
     /* 2. Draw all quads registered in the batch with a single logical call. */
     for (int i = 0; i < quad_batch_count; i++)
     {
         RenderQuad *q = &quad_batch[i];
-        
+
         gsKit_prim_sprite_texture(gs_global, q->texture,
                                   q->x, q->y,
                                   q->u1, q->v1,

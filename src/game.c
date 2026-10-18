@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <malloc.h>
+
 #include <libs/render/render.h>
+#include <libs/texture/texture.h>
 #include <libs/math/vectorial.h>
 #include <libs/performance/fps.h>
 #include <res/spritesheet_ci8.h>
