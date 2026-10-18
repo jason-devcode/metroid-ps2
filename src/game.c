@@ -11,107 +11,129 @@
 #include <libs/math/vectorial.h>
 #include <libs/performance/fps.h>
 #include <res/spritesheet_ci8.h>
-
 #include <libs/events/event.h>
 #include <libs/events/gamepad.h>
 
-#define WIDTH 640
-#define HEIGHT 448
-#define TOTAL_TILES (SUB_SPRITE_COLS * SUB_SPRITE_ROWS)
+/* ================================================================= *
+ * Constants & Configuration                                         *
+ * ================================================================= */
+#define SCREEN_WIDTH  640
+#define SCREEN_HEIGHT 448
+#define TOTAL_TILES   (SUB_SPRITE_COLS * SUB_SPRITE_ROWS)
 
-#define SAMUS_IDLE 0
+#define SAMUS_IDLE      0
 #define SAMUS_RUN_RIGHT 1
 
+#define MOVEMENT_SPEED  200.0f
+#define FRICTION_COEFF  0.05f
+#define SPRITE_SCALE    1.5f
 
-vec2f player_position = {{ 0.0f, 165.0f }};
-vec2f player_velocity = {{ 0.0f, 0.0f }};
+/* ================================================================= *
+ * Player State & Action Callbacks                                   *
+ * ================================================================= */
+static vec2f player_position = {{0.0f, 165.0f}};
+static vec2f player_velocity = {{0.0f, 0.0f}};
 
-void player_move_left( void* data ) {
+static void player_move_left(void *data) {
     (void)data;
-    player_velocity.x = -200.0;
+    player_velocity.x = -MOVEMENT_SPEED;
 }
 
-void player_move_right( void* data ) {
+static void player_move_right(void *data) {
     (void)data;
-    player_velocity.x = 200.0;
+    player_velocity.x = MOVEMENT_SPEED;
 }
 
-GamepadActionMachine metroid_gamepad_machine = {
+static GamepadActionMachine metroid_gamepad_machine = {
     .left_button_pressed  = player_move_left,
     .right_button_pressed = player_move_right
 };
 
-int main(int argc, char *argv[])
-{
-    /* 1. Inicializar el motor de renderizado a resolución NTSC 640x448. */
-    if (!init_render(WIDTH, HEIGHT))
-    {
+/* ================================================================= *
+ * Initialization Helpers                                            *
+ * ================================================================= */
+static bool init_game_systems(void) {
+    if (!init_render(SCREEN_WIDTH, SCREEN_HEIGHT)) {
         close_render();
+        return false;
+    }
+
+    gamepad.init(NULL);
+    gamepad.add_actions_machine(&metroid_gamepad_machine);
+    
+    return true;
+}
+
+/* ================================================================= *
+ * Main Application Entry Point                                      *
+ * ================================================================= */
+int main(int argc, char *argv[]) {
+    (void)argc;
+    (void)argv;
+
+    // 1. Initialize rendering and input subsystems
+    if (!init_game_systems()) {
         return -1;
     }
 
-    gamepad.init( NULL );
-    gamepad.add_actions_machine( &metroid_gamepad_machine );
-
-    /* Cargar la textura CI8 nativa directamente en VRAM (1 byte por píxel) */
+    // 2. Load CI8 texture directly into VRAM (1 byte per pixel)
     GSTEXTURE spritesheet_texture;
-    if (!create_ci8_texture(&spritesheet_texture, SUB_SPRITESHEET_WIDTH, SUB_SPRITESHEET_HEIGHT, spritesheet_indices, spritesheet_palette))
-    {
+    if (!create_ci8_texture(&spritesheet_texture, SUB_SPRITESHEET_WIDTH, SUB_SPRITESHEET_HEIGHT, spritesheet_indices, spritesheet_palette)) {
         printf("Error al crear la textura CI8 nativa en VRAM\n");
         close_render();
         return -1;
     }
 
-    int sprite_col = 0;
-
+    // 3. Animation and render state variables
     float sprite_animation = 0.0f;
-    float animation_speed = 0.25f;
+    float animation_speed  = 0.25f;
+    int   sprite_col       = 0;
+    bool  last_flip_x      = false;
 
-    float scale = 1.5f;
-    int sprite_row = 1;
-    (void)sprite_row;
-
-    float friction = 0.05;
-
-    bool last_flip_x = false;
-
-    /* 3. Bucle principal de juego y renderizado. */
-    while (game_running)
-    {
+    // 4. Main Game Loop
+    while (game_running) {
         update_deltatime();
-        gamepad.update( NULL );
+        gamepad.update(NULL);
 
+        // Physics & Movement update
         player_position.x += player_velocity.x * deltatime;
         player_position.y += player_velocity.y * deltatime;
-        player_velocity.x *= friction;
+        player_velocity.x *= FRICTION_COEFF;
 
-        last_flip_x = player_velocity.x != 0.0f ? player_velocity.x < 0.0f : last_flip_x;
+        // Update orientation flag based on horizontal velocity
+        if (player_velocity.x != 0.0f) {
+            last_flip_x = (player_velocity.x < 0.0f);
+        }
 
-        /* Iniciar un nuevo fotograma. */
+        // Start a new frame
         begin_frame();
 
-        int animation_row = (int) player_velocity.x != 0 ? SAMUS_RUN_RIGHT : SAMUS_IDLE;
-        int animation_col = animation_row == SAMUS_RUN_RIGHT ? sprite_col : SAMUS_IDLE;
+        // Select animation row and column
+        int animation_row = ((int)player_velocity.x != 0) ? SAMUS_RUN_RIGHT : SAMUS_IDLE;
+        int animation_col = (animation_row == SAMUS_RUN_RIGHT) ? sprite_col : SAMUS_IDLE;
 
-        /* Coordenadas UV en píxeles sobre el spritesheet completo */
+        // Calculate UV coordinates on the spritesheet
         float u1 = (float)(animation_col * SUB_TILE_WIDTH);
         float v1 = (float)(animation_row * SUB_TILE_HEIGHT);
         float u2 = (float)((animation_col + 1) * SUB_TILE_WIDTH);
         float v2 = (float)((animation_row + 1) * SUB_TILE_HEIGHT);
-        
 
-        /* Renderizar el quad usando la textura T8 nativa 
-         * (Usamos 0x80808080 para equilibrar el brillo/intensidad de color en gsKit). */
-        render_quad( (int) player_position.x , (int) player_position.y,
-                    (float)SUB_TILE_WIDTH * scale, (float)SUB_TILE_HEIGHT * scale, 
-                    u1, v1, u2, v2, last_flip_x, false,
-                    0xFF808080, &spritesheet_texture);
+        // Render player quad using native T8 texture (0xFF808080 balances gsKit brightness)
+        render_quad(
+            (int)player_position.x, (int)player_position.y,
+            (float)SUB_TILE_WIDTH * SPRITE_SCALE, (float)SUB_TILE_HEIGHT * SPRITE_SCALE,
+            u1, v1, u2, v2,
+            last_flip_x, false,
+            0xFF808080, &spritesheet_texture
+        );
 
-        // Update sprite animation
-        sprite_animation = sprite_animation < (float) (SUB_SPRITE_COLS - 1) ? sprite_animation + animation_speed : 0.0f;
-        sprite_col = (int) floor( sprite_animation );
+        // Advance sprite animation frame
+        sprite_animation = (sprite_animation < (float)(SUB_SPRITE_COLS - 1)) 
+                           ? sprite_animation + animation_speed 
+                           : 0.0f;
+        sprite_col = (int)floor(sprite_animation);
 
-        /* Enviar el lote completo a la GPU. */
+        // Submit draw batch to GPU
         draw();
     }
 
