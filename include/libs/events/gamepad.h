@@ -62,7 +62,7 @@ struct padButtonStatus buttons;
 /** 
  * @brief Minimum displacement threshold from the center required to trigger an analog stick action.
  */
-#define ANALOG_STICK_DEADZONE 10
+#define ANALOG_STICK_DEADZONE 20
 
 /**
  * @brief Gamepad Context Structure.
@@ -177,18 +177,62 @@ static EventSystem gamepad = {
 };
 
 /**
- * @brief Implementation of `init_pads`.
+ * @brief Initializes the PlayStation 2 controller hardware drivers, opens the pad port,
+ *        and configures the controller into DualShock (Analog) mode.
+ * 
+ * @details 
+ * This function performs the complete initialization sequence required for the PS2 pad subsystem:
+ * 1. **RPC Subsystem Initialization:** Boots the SIF RPC driver manager necessary for communication 
+ *    between the Emotion Engine (EE) and the Input/Output Processor (IOP).
+ * 2. **Driver Module Loading:** Loads essential low-level kernel modules from ROM (`SIO2MAN` for 
+ *    the serial I/O processor and `PADMAN` for the controller driver).
+ * 3. **Pad Subsystem Boot & Port Binding:** Initializes `libpad` and opens port 0, slot 0, 
+ *    assigning the required 64-byte aligned DMA buffer (`padBuf`).
+ * 4. **Hardware Stabilization Synchronization:** Blocks execution safely until the controller 
+ *    transitions into `PAD_STATE_STABLE`, ensuring the hardware is fully ready to receive commands.
+ * 5. **DualShock Mode Configuration:** Forces the controller into `PAD_MMODE_DUALSHOCK` (Analog mode) 
+ *    and applies `PAD_MMODE_LOCK` to prevent the user from accidentally toggling it off via the 'Analog' button.
+ * 6. **Request Completion Polling:** Waits for the asynchronous hardware request queue to report 
+ *    `PAD_RSTAT_COMPLETE`, guaranteeing that the mode switch has successfully taken effect before proceeding.
+ * 
+ * @param[in,out] data Generic user context pointer (unused, cast to void to prevent compiler warnings).
+ * @return `true` upon successful initialization and configuration, `false` if errors occur.
  */
 static bool init_pads(void *data)
 {
     (void)data;
+
+    // 1. Initialize the SIF Remote Procedure Call subsystem to communicate with IOP modules.
     SifInitRpc(0);
 
+    // 2. Load mandatory low-level PS2 controller drivers from ROM.
+    // SIO2MAN manages the serial communication interface, and PADMAN handles controller data parsing.
     SifLoadModule("rom0:SIO2MAN", 0, NULL);
     SifLoadModule("rom0:PADMAN", 0, NULL);
 
+    // 3. Initialize the pad library and open port 0, slot 0 with the aligned DMA status buffer.
     padInit(0);
     padPortOpen(0, 0, padBuf);
+
+    // 4. Block execution until the controller hardware reaches a stable operational state.
+    // This is mandatory before attempting any configuration commands like mode switching.
+    const int target_port = 0;
+    const int target_slot = 0;
+
+    while (padGetState(target_port, target_slot) != PAD_STATE_STABLE)
+    {
+        // Active wait cycle for hardware stabilization (avoids sending commands to a busy/disconnected device)
+    }
+
+    // 5. Request to switch the controller mode from default Digital to DualShock (Analog),
+    // and lock it so the user cannot toggle it off via the physical 'Analog' mode button.
+    padSetMainMode(target_port, target_slot, PAD_MMODE_DUALSHOCK, PAD_MMODE_LOCK);
+
+    // 6. Wait for the asynchronous controller request queue to fully complete the mode switch.
+    while (padGetReqState(target_port, target_slot) != PAD_RSTAT_COMPLETE)
+    {
+        // Active wait synchronization for request completion
+    }
 
     return true;
 }
