@@ -12,46 +12,8 @@
 #include <libs/performance/fps.h>
 #include <res/spritesheet_ci8.h>
 
-#include <libpad.h>
-#include <sifrpc.h>
-#include <loadfile.h>
-
-// El único buffer requerido (alineado a 64 bytes)
-static int8_t padBuf[256] __attribute__((aligned(64)));
-struct padButtonStatus buttons;
-
-void init_pads() {
-    SifInitRpc(0);
-
-    SifLoadModule("rom0:SIO2MAN", 0, NULL);
-    SifLoadModule("rom0:PADMAN", 0, NULL);
-
-    padInit(0);
-    padPortOpen(0, 0, padBuf);
-}
-
-void check_input( vec2f *velocity ) {
-    // Comprobamos directamente si el mando está listo para usarse
-    if (padGetState(0, 0) == PAD_STATE_STABLE) {
-        
-        // Leemos el estado del mando de forma directa
-        if (padRead(0, 0, &buttons) > 0) {
-            // Combinamos los bytes y aplicamos máscara inversa
-            uint32_t paddata = 0xffff ^ buttons.btns;
-
-            if (paddata & PAD_LEFT) {
-                // Presionó izquierda
-                velocity->x = -200.0;
-            }
-            if (paddata & PAD_RIGHT) {
-                // Presionó izquierda
-                velocity->x = 200.0;
-            }
-        }
-    }
-}
-
-
+#include <libs/events/event.h>
+#include <libs/events/gamepad.h>
 
 #define WIDTH 640
 #define HEIGHT 448
@@ -59,6 +21,25 @@ void check_input( vec2f *velocity ) {
 
 #define SAMUS_IDLE 0
 #define SAMUS_RUN_RIGHT 1
+
+
+vec2f player_position = {{ 0.0f, 165.0f }};
+vec2f player_velocity = {{ 0.0f, 0.0f }};
+
+void player_move_left( void* data ) {
+    (void)data;
+    player_velocity.x = -200.0;
+}
+
+void player_move_right( void* data ) {
+    (void)data;
+    player_velocity.x = 200.0;
+}
+
+GamepadActionMachine metroid_gamepad_machine = {
+    .left_button_pressed  = player_move_left,
+    .right_button_pressed = player_move_right
+};
 
 int main(int argc, char *argv[])
 {
@@ -69,7 +50,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    init_pads();
+    gamepad.init( NULL );
+    gamepad.add_actions_machine( &metroid_gamepad_machine );
 
     /* Cargar la textura CI8 nativa directamente en VRAM (1 byte por píxel) */
     GSTEXTURE spritesheet_texture;
@@ -87,10 +69,7 @@ int main(int argc, char *argv[])
 
     float scale = 1.5f;
     int sprite_row = 1;
-
-    vec2f player_position = {{ 0.0f, 165.0f }};
-    // vec2f player_velocity = {{ 200.0f, 0.0f }};
-    vec2f player_velocity = {{ 0.0f, 0.0f }};
+    (void)sprite_row;
 
     float friction = 0.05;
 
@@ -100,7 +79,7 @@ int main(int argc, char *argv[])
     while (game_running)
     {
         update_deltatime();
-        check_input( &player_velocity );
+        gamepad.update( NULL );
 
         player_position.x += player_velocity.x * deltatime;
         player_position.y += player_velocity.y * deltatime;
