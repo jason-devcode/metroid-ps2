@@ -9,13 +9,21 @@
  * It initializes hardware modules (`SIO2MAN` and `PADMAN`), polls controller inputs per frame, 
  * evaluates active flags, and dispatches callbacks to registered `GamepadActionMachine` instances.
  *
- * ## Extending the Action Machine with New Buttons
- * To support additional buttons (such as face buttons or analog axes), follow these steps:
+ * ## Core Architectural Concepts
+ * 1. **Events**: Hardware triggers from the DualShock 2 controller (button presses, stick displacements).
+ * 2. **Listeners**: The polling/update loop inside `update_pad_inputs` that checks controller states every frame.
+ * 3. **Actions**: Uniform callback functions (`GamepadAction`) executed when specific event criteria are met.
+ * 4. **GamepadContext**: An autonomous state container that holds analog stick axes, button bitmasks, 
+ *    and a generic `extra_data` payload to securely pass custom user contexts without unsafe assumptions.
+ * 5. **Action Machine**: A structure grouping related action callbacks representing a specific behavioral state (FSM-like).
+ *
+ * ## Extending the Action Machine with New Inputs
+ * To support additional inputs, follow these steps:
  * 1. Add a new `GamepadAction` callback field inside the `GamepadActionMachine` structure 
  *    (e.g., `GamepadAction cross_button_pressed;`).
  * 2. Update the button bitmask check in `update_pad_inputs()` using the corresponding 
  *    PS2SDK macros (e.g., `PAD_CROSS`, `PAD_SQUARE`, `PAD_TRIANGLE`, `PAD_CIRCLE`).
- * 3. Evaluate and execute the callback inside the loop just like the directional inputs.
+ * 3. Evaluate and execute the callback inside the loop, passing the `GamepadContext` pointer.
  */
 
 #ifndef LIB_GAMEPAD_EVENT_SYSTEM_H
@@ -26,6 +34,7 @@
 #include <loadfile.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include <libs/events/event.h>
 
@@ -39,11 +48,56 @@ static int8_t padBuf[256] __attribute__((aligned(64)));
  */
 struct padButtonStatus buttons;
 
+/** 
+ * @brief Bitmask representing all 16 digital buttons available on the DualShock 2 controller.
+ * @details Used to invert the active-low hardware bitmask provided by the PS2 controller.
+ */
+#define PAD_BUTTON_MASK_ALL 0xFFFF
+
+/** 
+ * @brief Neutral center position value for PlayStation 2 analog sticks.
+ */
+#define ANALOG_STICK_CENTER 128
+
+/** 
+ * @brief Minimum displacement threshold from the center required to trigger an analog stick action.
+ */
+#define ANALOG_STICK_DEADZONE 10
+
+/**
+ * @brief Gamepad Context Structure.
+ *
+ * @details Encapsulates autonomous gamepad state (analog axes and digital button bitmask) 
+ *          alongside an `extra_data` field to securely forward user payloads to action callbacks.
+ */
+typedef struct __tag_gamepad_context__ {
+    uint8_t ljoy_h;           ///< Left Analog Stick Horizontal Axis (range: 0 to 255, centered at 128)
+    uint8_t ljoy_v;           ///< Left Analog Stick Vertical Axis (range: 0 to 255, centered at 128)
+    uint8_t rjoy_h;           ///< Right Analog Stick Horizontal Axis (range: 0 to 255, centered at 128)
+    uint8_t rjoy_v;           ///< Right Analog Stick Vertical Axis (range: 0 to 255, centered at 128)
+    uint32_t current_buttons; ///< Processed active-high button bitmask representing currently pressed buttons
+    void *extra_data;         ///< User-defined payload forwarded securely from the update call
+} GamepadContext;
+
+/**
+ * @brief Global autonomous gamepad context instance.
+ */
+static GamepadContext internal_gamepad_context = {0};
+
+/**
+ * @brief Retrieves a pointer to the global gamepad context.
+ * 
+ * @return GamepadContext* Pointer to `internal_gamepad_context`.
+ */
+static inline GamepadContext* gamepad_get_context(void) {
+    return &internal_gamepad_context;
+}
+
 /**
  * @brief Initializes the PS2 RPC subsystem, loads PAD drivers, and opens the pad port.
  * 
  * @param[in,out] data Generic user context pointer (unused).
- * @return `true` upon successful initialization, `false` otherwise.
+ * @return `true` if initialization succeeded, `false` otherwise.
  */
 static bool init_pads(void *data);
 
@@ -51,10 +105,10 @@ static bool init_pads(void *data);
  * @brief Polls the gamepad hardware state and dispatches actions to registered action machines.
  * 
  * @details Performs early returns if the controller is not in a stable state or if reading fails. 
- *          Inverts the button bitmask and evaluates active inputs (directional and face buttons) 
- *          against all registered `GamepadActionMachine` instances.
+ *          Updates internal analog axes and button states, assigns the incoming `data` pointer 
+ *          to `internal_gamepad_context.extra_data`, and evaluates all digital and analog triggers.
  * 
- * @param[in,out] data Generic game/system context passed directly into executed action callbacks.
+ * @param[in,out] data External user data payload (safely encapsulated into `GamepadContext::extra_data`).
  */
 static void update_pad_inputs(void *data);
 
@@ -66,30 +120,50 @@ static void update_pad_inputs(void *data);
 static void add_pad_actions_machine(ActionMachine actions_machine);
 
 /**
- * @brief Function pointer prototype for gamepad-driven actions.
+ * @brief Uniform function pointer prototype for all gamepad-driven actions.
  * 
- * @param[in,out] context Generic user or system context passed down during execution.
+ * @param[in,out] context Pointer to `GamepadContext` containing axes, bitmask, and `extra_data`.
  */
 typedef void (*GamepadAction)(void *);
 
 /**
- * @brief Gamepad-specific Action Machine structure.
+ * @brief Gamepad-specific Action Machine structure containing all controller inputs.
  *
- * @details Groups related action callbacks mapped to directional and control inputs. 
- *          This structure acts as an FSM-like action container for the gamepad subsystem.
- *
- * @note To add new button actions, declare a new `GamepadAction` callback field here 
- *       and evaluate its corresponding `PAD_*` mask inside the update loop.
+ * @details Groups related action callbacks mapped to directional pad, face buttons, 
+ *          shoulder triggers, system buttons, L3/R3 stick clicks, and analog stick movements.
  */
 typedef struct __tag_gamepad_action_machine__
 {
-    // Direction buttons
-    GamepadAction left_button_pressed;  ///< Callback executed when the left directional button is active.
-    GamepadAction right_button_pressed; ///< Callback executed when the right directional button is active.
+    // --- Directional Pad (D-Pad) ---
+    GamepadAction left_button_pressed;    ///< Callback executed when D-Pad Left is active.
+    GamepadAction right_button_pressed;   ///< Callback executed when D-Pad Right is active.
+    GamepadAction up_button_pressed;      ///< Callback executed when D-Pad Up is active.
+    GamepadAction down_button_pressed;    ///< Callback executed when D-Pad Down is active.
 
-    // Example of how to extend with face buttons:
-    // GamepadAction cross_button_pressed;  ///< Callback executed when the Cross button is active.
-    // GamepadAction square_button_pressed; ///< Callback executed when the Square button is active.
+    // --- Face Buttons ---
+    GamepadAction cross_button_pressed;   ///< Callback executed when Cross (X) is active.
+    GamepadAction square_button_pressed;  ///< Callback executed when Square ([]) is active.
+    GamepadAction circle_button_pressed;  ///< Callback executed when Circle (O) is active.
+    GamepadAction triangle_button_pressed;///< Callback executed when Triangle (/\) is active.
+
+    // --- Shoulder / Trigger Buttons ---
+    GamepadAction l1_button_pressed;      ///< Callback executed when L1 Shoulder is active.
+    GamepadAction l2_button_pressed;      ///< Callback executed when L2 Trigger is active.
+    GamepadAction r1_button_pressed;      ///< Callback executed when R1 Shoulder is active.
+    GamepadAction r2_button_pressed;      ///< Callback executed when R2 Trigger is active.
+
+    // --- System Buttons ---
+    GamepadAction start_button_pressed;   ///< Callback executed when Start Button is active.
+    GamepadAction select_button_pressed;  ///< Callback executed when Select Button is active.
+
+    // --- Analog Stick Clicks (L3 / R3) ---
+    GamepadAction l3_button_pressed;      ///< Callback executed when Left Analog Stick Click is active.
+    GamepadAction r3_button_pressed;      ///< Callback executed when Right Analog Stick Click is active.
+
+    // --- Analog Stick Actions ---
+    GamepadAction left_stick_moved;       ///< Callback executed when Left Stick moves beyond deadzone threshold.
+    GamepadAction right_stick_moved;      ///< Callback executed when Right Stick moves beyond deadzone threshold.
+
 } GamepadActionMachine;
 
 /**
@@ -130,31 +204,73 @@ static void update_pad_inputs(void *data)
     if (padRead(0, 0, &buttons) <= 0)
         return;
 
-    // 2. Input processing: invert active-low bitmask from the DualShock controller
-    uint32_t paddata = 0xffff ^ buttons.btns;
+    // 2. Populate autonomous context state and securely wrap external user payload in extra_data
+    internal_gamepad_context.ljoy_h          = buttons.ljoy_h;
+    internal_gamepad_context.ljoy_v          = buttons.ljoy_v;
+    internal_gamepad_context.rjoy_h          = buttons.rjoy_h;
+    internal_gamepad_context.rjoy_v          = buttons.rjoy_v;
+    internal_gamepad_context.current_buttons = PAD_BUTTON_MASK_ALL ^ buttons.btns;
+    internal_gamepad_context.extra_data      = data;
 
+    uint32_t paddata = internal_gamepad_context.current_buttons;
+
+    // 3. Iterate and dispatch actions to registered action machines
     for (size_t i = 0; i < gamepad.action_machines_counter; ++i)
     {
         GamepadActionMachine *machine = (GamepadActionMachine *)gamepad.action_machines[i];
 
-        // 3. Direct execution evaluating condition and function pointer for each button
-
+        // --- Digital Buttons Evaluation ---
         if ((paddata & PAD_LEFT) && machine->left_button_pressed)
-        {
-            machine->left_button_pressed(data);
-        }
-
+            machine->left_button_pressed(&internal_gamepad_context);
         if ((paddata & PAD_RIGHT) && machine->right_button_pressed)
+            machine->right_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_UP) && machine->up_button_pressed)
+            machine->up_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_DOWN) && machine->down_button_pressed)
+            machine->down_button_pressed(&internal_gamepad_context);
+
+        if ((paddata & PAD_CROSS) && machine->cross_button_pressed)
+            machine->cross_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_SQUARE) && machine->square_button_pressed)
+            machine->square_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_CIRCLE) && machine->circle_button_pressed)
+            machine->circle_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_TRIANGLE) && machine->triangle_button_pressed)
+            machine->triangle_button_pressed(&internal_gamepad_context);
+
+        if ((paddata & PAD_L1) && machine->l1_button_pressed)
+            machine->l1_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_L2) && machine->l2_button_pressed)
+            machine->l2_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_R1) && machine->r1_button_pressed)
+            machine->r1_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_R2) && machine->r2_button_pressed)
+            machine->r2_button_pressed(&internal_gamepad_context);
+
+        if ((paddata & PAD_START) && machine->start_button_pressed)
+            machine->start_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_SELECT) && machine->select_button_pressed)
+            machine->select_button_pressed(&internal_gamepad_context);
+
+        if ((paddata & PAD_L3) && machine->l3_button_pressed)
+            machine->l3_button_pressed(&internal_gamepad_context);
+        if ((paddata & PAD_R3) && machine->r3_button_pressed)
+            machine->r3_button_pressed(&internal_gamepad_context);
+
+        // --- Analog Sticks Evaluation (using deadzone and center constants) ---
+        if (machine->left_stick_moved && 
+            (abs((int)internal_gamepad_context.ljoy_h - ANALOG_STICK_CENTER) > ANALOG_STICK_DEADZONE || 
+             abs((int)internal_gamepad_context.ljoy_v - ANALOG_STICK_CENTER) > ANALOG_STICK_DEADZONE))
         {
-            machine->right_button_pressed(data);
+            machine->left_stick_moved(&internal_gamepad_context);
         }
 
-        /* Example extension for face buttons:
-        if ((paddata & PAD_CROSS) && machine->cross_button_pressed)
+        if (machine->right_stick_moved && 
+            (abs((int)internal_gamepad_context.rjoy_h - ANALOG_STICK_CENTER) > ANALOG_STICK_DEADZONE || 
+             abs((int)internal_gamepad_context.rjoy_v - ANALOG_STICK_CENTER) > ANALOG_STICK_DEADZONE))
         {
-            machine->cross_button_pressed(data);
+            machine->right_stick_moved(&internal_gamepad_context);
         }
-        */
     }
 }
 
