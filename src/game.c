@@ -24,29 +24,27 @@
 #define SAMUS_IDLE      0
 #define SAMUS_RUN_RIGHT 1
 
-#define MOVEMENT_SPEED  200.0f
+#define MOVEMENT_SPEED  350.0f
 #define FRICTION_COEFF  0.05f
-#define SPRITE_SCALE    1.5f
+#define SPRITE_SCALE    2.0f
 
 /* ================================================================= *
  * Player State & Action Callbacks                                   *
  * ================================================================= */
-static vec2f player_position = {{0.0f, 165.0f}};
+static vec2f player_position = {{350.0f, 165.0f}};
 static vec2f player_velocity = {{0.0f, 0.0f}};
 
-static void player_move_left(void *data) {
-    (void)data;
-    player_velocity.x = -MOVEMENT_SPEED;
-}
-
-static void player_move_right(void *data) {
-    (void)data;
-    player_velocity.x = MOVEMENT_SPEED;
+static void player_move_horizontal(void *data) {
+    GamepadContext *ctx = (GamepadContext *)data;
+    
+    // Distancia respecto al centro (128)
+    float h_axis_ratio = ((int)ctx->ljoy_h - ANALOG_STICK_CENTER) / 128.0f;
+    
+    player_velocity.x = h_axis_ratio * MOVEMENT_SPEED;
 }
 
 static GamepadActionMachine metroid_gamepad_machine = {
-    .left_button_pressed  = player_move_left,
-    .right_button_pressed = player_move_right
+    .left_stick_moved = player_move_horizontal
 };
 
 /* ================================================================= *
