@@ -41,13 +41,18 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
         - [X] Hacer que la librería sea utilizable desde cualquier fichero fuente .c.
     - [x] Crear una librería render que ofreca las siguientes funcionalidades:
         - [x] Inicializar el motor de vídeo a través de dmaKit y gsKit.
-        - [x] Desactivar el cursor en pantalla.
-        - [x] Inicializar el framebuffer.
-        - [x] Dibujar el framebuffer a travé de Doble-Buffering.
+        - [x] Crear texturas GS de 32BPP ABGR subiendo sus datos a la VRAM.
+        - [x] Crear texturas GS en formato CI8 con pixeles de 8BPP y paleta de 256 colores subiendo sus datos a la VRAM.
+        - [x] Sistema de registro de quads a dibujar por lotes (batching rendering).
+            - [x] Registrar un RenderQuad con sus propiedades de posición, ancho, alto, coordenadas de textura, ID GS de textura en VRAM, flip de textura horizontal y vertical, y color de máscara.
+            - [x] Al registrar un RenderQuad se debe de sumar +1 a un contador que empieza desde 0 por frame de modo que se van agregando los RenderQuad a dibujar en el frame.
+            - [x] Capacidad para reestablecer el contador de RenderQuads dibujados en el frame anterior a 0 preparando el sistema para el siguiente frame.
+            - [x] Mandar a dibujar todos los quads a través de gsKit.
         - [x] Liberar recursos utilizados.
         - [x] Gestión de colores y propiedades del sistema de vídeo.
     - [x] Implementar el sistema de inicialización y captura de inputs del control.
     - [x] Crear una librería que ofrezca las utilidades necesarias para calcular el deltatime de cada frame.
+    - [ ] Implementar un sistema flexible y escalable para gestionar los eventos de control.
 
 ## Fase 3 - Entidades
 - [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
