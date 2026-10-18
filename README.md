@@ -52,11 +52,11 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
         - [x] Gestión de colores y propiedades del sistema de vídeo.
     - [x] Implementar el sistema de inicialización y captura de inputs del control.
     - [x] Crear una librería que ofrezca las utilidades necesarias para calcular el deltatime de cada frame.
-    - [ ] Implementar un sistema flexible y escalable para gestionar los eventos de control.
+    - [x] Implementar un sistema flexible y escalable para gestionar los eventos de control.
 
 ## Fase 3 - Entidades
 - [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
-    - [x] Crear una estructura Entity.
+    - [ ] Crear una estructura Entity.
     - [ ] Crear una estructura de física.    
     - [ ] Desarrollar una máquina de estados para las entidades.
     - [ ] Darle el aspecto visual a las entidades, colocarle un sprite del SA-X en estado idle al personaje.
