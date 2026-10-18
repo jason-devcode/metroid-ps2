@@ -10,21 +10,25 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <gsKit.h>
 #include <dmaKit.h>
 #include <tamtypes.h>
 
+/** @brief Alias for the underlying gsKit texture structure. */
+typedef GSTEXTURE Texture;
+
 /**
  * @brief Creates and allocates VRAM for a custom texture (e.g., procedural shapes).
  * 
- * @param texture Pointer to the GSTEXTURE structure.
+ * @param texture Pointer to the Texture structure.
  * @param width Texture width in pixels.
  * @param height Texture height in pixels.
  * @param pixels Pointer to the source pixel data.
  * @return True if creation and VRAM allocation succeed, false otherwise.
  */
-static bool create_texture(GSTEXTURE *texture, int width, int height, uint32_t *pixels)
+static bool create_texture(Texture *texture, int width, int height, uint32_t *pixels)
 {
     texture->Width = width;
     texture->Height = height;
@@ -49,16 +53,16 @@ static bool create_texture(GSTEXTURE *texture, int width, int height, uint32_t *
 /**
  * @brief Creates and allocates VRAM for a native CI8 (T8) texture with its palette (CLUT).
  * 
- * @param texture Pointer to the GSTEXTURE structure.
+ * @param texture Pointer to the Texture structure.
  * @param width Texture width in pixels.
  * @param height Texture height in pixels.
  * @param indices Pointer to the 1-byte index array.
  * @param palette Pointer to the palette color array in ABGR format (32-bit).
  * @return True if allocation and upload succeed, false otherwise.
  */
-static bool create_ci8_texture(GSTEXTURE *texture, int width, int height, const uint8_t *indices, const uint32_t *palette)
+static bool create_ci8_texture(Texture *texture, int width, int height, const uint8_t *indices, const uint32_t *palette)
 {
-    memset(texture, 0, sizeof(GSTEXTURE));
+    memset(texture, 0, sizeof(Texture));
 
     texture->Width = width;
     texture->Height = height;
