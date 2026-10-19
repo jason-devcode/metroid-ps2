@@ -66,6 +66,14 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
            - [x] Cálculo dinámico de coordenadas UV (`u1, v1, u2, v2`) por fotograma en base a la cuadrícula.
            - [x] Definición e inicialización de estados de animación del jugador (idle y caminar a izquierda/derecha).
            - [x] Encapsulamiento de la lógica de selección y avance de animación (`update_animation`).
+    - [x] Implementar un sistema de máquina de estados finita (FSM) basada en cabecera única (*header-only*).
+        - [x] Diseñar estructura de tamaño fijo sin asignación dinámica (`malloc`/`free`) ideal para sistemas embebidos y retro (PS2SDK).
+        - [x] Soportar ciclo de vida completo por estado con ganchos: `enter`, `step` y `close`.
+        - [x] Implementar la función de transición de estados (`fsm_change`) con ejecución automática de limpieza y entrada.
+        - [x] Implementar la función de ejecución de bucle principal (`fsm_step`).
+        - [x] Añadir soporte para contexto personalizado de datos (`StateContext` / `void*`) para evitar variables globales.
+        - [x] Proveer funciones `static inline` para evitar errores de enlace múltiple (*linker errors*).
+        - [x] Documentar completamente el código con estándares de Doxygen en inglés, incluyendo casos de uso prácticos.
 
 
 ## Fase 3 - Entidades
