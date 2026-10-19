@@ -51,8 +51,22 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
         - [x] Liberar recursos utilizados.
         - [x] Gestión de colores y propiedades del sistema de vídeo.
     - [x] Implementar el sistema de inicialización y captura de inputs del control.
-    - [x] Crear una librería que ofrezca las utilidades necesarias para calcular el deltatime de cada frame.
+    - [x] Crear una librería que ayude a calcular el tiempo que pasa entre frame y frame (deltatime).
     - [x] Implementar un sistema flexible y escalable para gestionar los eventos de control.
+    - [x] Implementar el sistema de sprites y sus animaciones:
+       - [x] Crear estructura `Sprite` que contenga:
+           - [x] La instancia de la estructura de la textura subida a la VRAM.
+           - [x] La cantidad de columnas del sprite en caso de ser una hoja de sprites (`spritesheet`).
+           - [x] La cantidad de filas del sprite en caso de ser una hoja de sprites (`spritesheet`).
+           - [x] El ancho en píxeles por celda de la hoja de sprites.
+           - [x] El alto en píxeles por celda de la hoja de sprites.
+       - [x] Implementar el subsistema de animaciones de sprites (`SpriteAnimation` y `SpriteFrame`):
+           - [x] Configuración de rangos de celdas, velocidades de reproducción y comportamiento de bucle (`loop`).
+           - [x] Soporte para inversión de orientación horizontal/vertical (`flip_x`, `flip_y`).
+           - [x] Cálculo dinámico de coordenadas UV (`u1, v1, u2, v2`) por fotograma en base a la cuadrícula.
+           - [x] Definición e inicialización de estados de animación del jugador (idle y caminar a izquierda/derecha).
+           - [x] Encapsulamiento de la lógica de selección y avance de animación (`update_animation`).
+
 
 ## Fase 3 - Entidades
 - [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.

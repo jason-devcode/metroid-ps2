@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <malloc.h>
+#include <stdbool.h>
 
 #include <libs/render/render.h>
 #include <libs/texture/texture.h>
@@ -15,34 +16,62 @@
 #include <res/spritesheet_ci8.h>
 #include <libs/events/event.h>
 #include <libs/events/gamepad.h>
+#include <libs/sprite/sprite.h>
+#include <libs/sprite/animation.h>
 
 /* ================================================================= *
  * Constants & Configuration                                         *
  * ================================================================= */
-#define SCREEN_WIDTH  640
-#define SCREEN_HEIGHT 448
-#define TOTAL_TILES   (SUB_SPRITE_COLS * SUB_SPRITE_ROWS)
+#define SCREEN_WIDTH      640
+#define SCREEN_HEIGHT     448
+#define TOTAL_TILES       (SUB_SPRITE_COLS * SUB_SPRITE_ROWS)
 
-#define SAMUS_IDLE      0
-#define SAMUS_RUN_RIGHT 1
-
-#define MOVEMENT_SPEED  350.0f
-#define FRICTION_COEFF  0.05f
-#define SPRITE_SCALE    2.0f
+#define MOVEMENT_SPEED    350.0f
+#define FRICTION_COEFF    0.1f
+#define SPRITE_SCALE      2.0f
+#define ANALOG_CENTER_DIV 128.0f
 
 /* ================================================================= *
- * Player State & Action Callbacks                                   *
+ * Types & Structures                                                *
  * ================================================================= */
-static vec2f player_position = {{350.0f, 165.0f}};
-static vec2f player_velocity = {{0.0f, 0.0f}};
+typedef struct {
+    vec2f position;
+    vec2f velocity;
+    bool facing_left;
+} Player;
 
-static void player_move_horizontal(void *data) {
-    GamepadContext *ctx = (GamepadContext *)data;
+typedef struct {
+    Sprite spritesheet;
+    SpriteAnimation idle_left;
+    SpriteAnimation idle_right;
+    SpriteAnimation walk_left;
+    SpriteAnimation walk_right;
+} PlayerAnimations;
+
+/* ================================================================= *
+ * Global State                                                      *
+ * ================================================================= */
+static Player player = {
+    .position = {{350.0f, 165.0f}},
+    .velocity = {{0.0f, 0.0f}},
+    .facing_left = false
+};
+
+static PlayerAnimations samus;
+
+/* ================================================================= *
+ * Player Input & Movement                                           *
+ * ================================================================= */
+static void player_move_horizontal(void *data)
+{
+    const GamepadContext *ctx = (GamepadContext *)data;
+    float h_axis_ratio = ((int)ctx->ljoy_h - ANALOG_STICK_CENTER) / ANALOG_CENTER_DIV;
+
+    player.velocity.x = h_axis_ratio * MOVEMENT_SPEED;
     
-    // Distancia respecto al centro (128)
-    float h_axis_ratio = ((int)ctx->ljoy_h - ANALOG_STICK_CENTER) / 128.0f;
-    
-    player_velocity.x = h_axis_ratio * MOVEMENT_SPEED;
+    if (player.velocity.x != 0.0f) {
+        player.facing_left = (player.velocity.x < 0.0f);
+    }
 }
 
 static GamepadActionMachine metroid_gamepad_machine = {
@@ -52,7 +81,8 @@ static GamepadActionMachine metroid_gamepad_machine = {
 /* ================================================================= *
  * Initialization Helpers                                            *
  * ================================================================= */
-static bool init_game_systems(void) {
+static bool init_game_systems(void)
+{
     if (!init_render(SCREEN_WIDTH, SCREEN_HEIGHT)) {
         close_render();
         return false;
@@ -60,80 +90,91 @@ static bool init_game_systems(void) {
 
     gamepad.init(NULL);
     gamepad.add_actions_machine(&metroid_gamepad_machine);
-    
     return true;
+}
+
+static bool init_player_assets(void)
+{
+    if (!create_ci8_sprite(
+            &samus.spritesheet,
+            SUB_SPRITESHEET_WIDTH,
+            SUB_SPRITESHEET_HEIGHT,
+            SUB_SPRITE_COLS,
+            SUB_SPRITE_ROWS,
+            SUB_TILE_WIDTH,
+            SUB_TILE_HEIGHT,
+            spritesheet_indices,
+            spritesheet_palette))
+    {
+        printf("Error al crear la textura CI8 nativa en VRAM\n");
+        return false;
+    }
+
+    create_sprite_animation(&samus.idle_left,  &samus.spritesheet, 0.0f,  0.0f, 0.0f, 1.0f,                    0.0f, true,  false, false);
+    create_sprite_animation(&samus.idle_right, &samus.spritesheet, 0.0f,  0.0f, 0.0f, 1.0f,                    0.0f, false, false, false);
+    create_sprite_animation(&samus.walk_right, &samus.spritesheet, 0.25f, 0.0f, 0.0f, (float)SUB_SPRITE_COLS - 1, 1.0f, false, false, true);
+    create_sprite_animation(&samus.walk_left,  &samus.spritesheet, 0.25f, 0.0f, 0.0f, (float)SUB_SPRITE_COLS - 1, 1.0f, true,  false, true);
+
+    return true;
+}
+
+static void update_physics(void)
+{
+    player.position.x += player.velocity.x * deltatime;
+    player.position.y += player.velocity.y * deltatime;
+    player.velocity.x *= FRICTION_COEFF;
+}
+
+static void update_animation(SpriteAnimation **current_animation, SpriteFrame *out_frame)
+{
+    const bool is_moving = fabsf(player.velocity.x) >= 1.0f;
+
+    *current_animation = is_moving
+        ? (player.facing_left ? &samus.walk_left : &samus.walk_right)
+        : (player.facing_left ? &samus.idle_left : &samus.idle_right);
+
+    update_sprite_animation(*current_animation, out_frame);
 }
 
 /* ================================================================= *
  * Main Application Entry Point                                      *
  * ================================================================= */
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     (void)argc;
     (void)argv;
 
-    // 1. Initialize rendering and input subsystems
-    if (!init_game_systems()) {
-        return -1;
-    }
-
-    // 2. Load CI8 texture directly into VRAM (1 byte per pixel)
-    GSTEXTURE spritesheet_texture;
-    if (!create_ci8_texture(&spritesheet_texture, SUB_SPRITESHEET_WIDTH, SUB_SPRITESHEET_HEIGHT, spritesheet_indices, spritesheet_palette)) {
-        printf("Error al crear la textura CI8 nativa en VRAM\n");
+    if (!init_game_systems() || !init_player_assets()) {
         close_render();
         return -1;
     }
 
-    // 3. Animation and render state variables
-    float sprite_animation = 0.0f;
-    float animation_speed  = 0.25f;
-    int   sprite_col       = 0;
-    bool  last_flip_x      = false;
+    const float display_sprite_w = (float)SUB_TILE_WIDTH * SPRITE_SCALE;
+    const float display_sprite_h = (float)SUB_TILE_HEIGHT * SPRITE_SCALE;
 
-    // 4. Main Game Loop
-    while (game_running) {
+    SpriteAnimation *current_animation = &samus.idle_right;
+    SpriteFrame samus_current_frame;
+
+    // Main Game Loop
+    while (game_running)
+    {
         update_deltatime();
         gamepad.update(NULL);
+        update_physics();
 
-        // Physics & Movement update
-        player_position.x += player_velocity.x * deltatime;
-        player_position.y += player_velocity.y * deltatime;
-        player_velocity.x *= FRICTION_COEFF;
-
-        // Update orientation flag based on horizontal velocity
-        if (player_velocity.x != 0.0f) {
-            last_flip_x = (player_velocity.x < 0.0f);
-        }
-
-        // Start a new frame
+        update_animation(&current_animation, &samus_current_frame);
+            
         begin_frame();
 
-        // Select animation row and column
-        int animation_row = ((int)player_velocity.x != 0) ? SAMUS_RUN_RIGHT : SAMUS_IDLE;
-        int animation_col = (animation_row == SAMUS_RUN_RIGHT) ? sprite_col : SAMUS_IDLE;
-
-        // Calculate UV coordinates on the spritesheet
-        float u1 = (float)(animation_col * SUB_TILE_WIDTH);
-        float v1 = (float)(animation_row * SUB_TILE_HEIGHT);
-        float u2 = (float)((animation_col + 1) * SUB_TILE_WIDTH);
-        float v2 = (float)((animation_row + 1) * SUB_TILE_HEIGHT);
-
-        // Render player quad using native T8 texture (0xFF808080 balances gsKit brightness)
         render_quad(
-            (int)player_position.x, (int)player_position.y,
-            (float)SUB_TILE_WIDTH * SPRITE_SCALE, (float)SUB_TILE_HEIGHT * SPRITE_SCALE,
-            u1, v1, u2, v2,
-            last_flip_x, false,
-            0xFF808080, &spritesheet_texture
+            (int)player.position.x, (int)player.position.y,
+            display_sprite_w, display_sprite_h,
+            samus_current_frame.u1, samus_current_frame.v1, 
+            samus_current_frame.u2, samus_current_frame.v2,
+            false, false,
+            0xFF808080, &samus.spritesheet.texture
         );
 
-        // Advance sprite animation frame
-        sprite_animation = (sprite_animation < (float)(SUB_SPRITE_COLS - 1)) 
-                           ? sprite_animation + animation_speed 
-                           : 0.0f;
-        sprite_col = (int)floor(sprite_animation);
-
-        // Submit draw batch to GPU
         draw();
     }
 
