@@ -18,29 +18,35 @@
 #include <libs/events/gamepad.h>
 #include <libs/sprite/sprite.h>
 #include <libs/sprite/animation.h>
+#include <libs/state_machine/fsm.h>
 
 /* ================================================================= *
  * Constants & Configuration                                         *
  * ================================================================= */
-#define SCREEN_WIDTH      640
-#define SCREEN_HEIGHT     448
-#define TOTAL_TILES       (SUB_SPRITE_COLS * SUB_SPRITE_ROWS)
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 448
+#define TOTAL_TILES (SUB_SPRITE_COLS * SUB_SPRITE_ROWS)
 
-#define MOVEMENT_SPEED    350.0f
-#define FRICTION_COEFF    0.1f
-#define SPRITE_SCALE      2.0f
+#define MOVEMENT_SPEED 350.0f
+#define FRICTION_COEFF 0.1f
+#define SPRITE_SCALE 2.0f
 #define ANALOG_CENTER_DIV 128.0f
+
+const float display_sprite_w = (float)SUB_TILE_WIDTH * SPRITE_SCALE;
+const float display_sprite_h = (float)SUB_TILE_HEIGHT * SPRITE_SCALE;
 
 /* ================================================================= *
  * Types & Structures                                                *
  * ================================================================= */
-typedef struct {
+typedef struct
+{
     vec2f position;
     vec2f velocity;
     bool facing_left;
 } Player;
 
-typedef struct {
+typedef struct
+{
     Sprite spritesheet;
     SpriteAnimation idle_left;
     SpriteAnimation idle_right;
@@ -54,8 +60,7 @@ typedef struct {
 static Player player = {
     .position = {{350.0f, 165.0f}},
     .velocity = {{0.0f, 0.0f}},
-    .facing_left = false
-};
+    .facing_left = false};
 
 static PlayerAnimations samus;
 
@@ -68,22 +73,23 @@ static void player_move_horizontal(void *data)
     float h_axis_ratio = ((int)ctx->ljoy_h - ANALOG_STICK_CENTER) / ANALOG_CENTER_DIV;
 
     player.velocity.x = h_axis_ratio * MOVEMENT_SPEED;
-    
-    if (player.velocity.x != 0.0f) {
+
+    if (player.velocity.x != 0.0f)
+    {
         player.facing_left = (player.velocity.x < 0.0f);
     }
 }
 
 static GamepadActionMachine metroid_gamepad_machine = {
-    .left_stick_moved = player_move_horizontal
-};
+    .left_stick_moved = player_move_horizontal};
 
 /* ================================================================= *
  * Initialization Helpers                                            *
  * ================================================================= */
 static bool init_game_systems(void)
 {
-    if (!init_render(SCREEN_WIDTH, SCREEN_HEIGHT)) {
+    if (!init_render(SCREEN_WIDTH, SCREEN_HEIGHT))
+    {
         close_render();
         return false;
     }
@@ -110,10 +116,10 @@ static bool init_player_assets(void)
         return false;
     }
 
-    create_sprite_animation(&samus.idle_left,  &samus.spritesheet, 0.0f,  0.0f, 0.0f, 1.0f,                    0.0f, true,  false, false);
-    create_sprite_animation(&samus.idle_right, &samus.spritesheet, 0.0f,  0.0f, 0.0f, 1.0f,                    0.0f, false, false, false);
+    create_sprite_animation(&samus.idle_left, &samus.spritesheet, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, true, false, false);
+    create_sprite_animation(&samus.idle_right, &samus.spritesheet, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, false, false, false);
     create_sprite_animation(&samus.walk_right, &samus.spritesheet, 0.25f, 0.0f, 0.0f, (float)SUB_SPRITE_COLS - 1, 1.0f, false, false, true);
-    create_sprite_animation(&samus.walk_left,  &samus.spritesheet, 0.25f, 0.0f, 0.0f, (float)SUB_SPRITE_COLS - 1, 1.0f, true,  false, true);
+    create_sprite_animation(&samus.walk_left, &samus.spritesheet, 0.25f, 0.0f, 0.0f, (float)SUB_SPRITE_COLS - 1, 1.0f, true, false, true);
 
     return true;
 }
@@ -125,35 +131,100 @@ static void update_physics(void)
     player.velocity.x *= FRICTION_COEFF;
 }
 
-static void update_animation(SpriteAnimation **current_animation, SpriteFrame *out_frame)
+FiniteStateMachine player_fsm;
+
+enum SAMUS_STATES
 {
-    const bool is_moving = fabsf(player.velocity.x) >= 1.0f;
+    SAMUS_IDLE_RIGHT_STATE,
+    SAMUS_IDLE_LEFT_STATE,
+    SAMUS_WALK_LEFT,
+    SAMUS_WALK_RIGHT,
+};
 
-    *current_animation = is_moving
-        ? (player.facing_left ? &samus.walk_left : &samus.walk_right)
-        : (player.facing_left ? &samus.idle_left : &samus.idle_right);
-
-    update_sprite_animation(*current_animation, out_frame);
+void step_samus_check_idle_state(FSM *fsm)
+{
+    if ((int)player.velocity.x != 0)
+        fsm_change(fsm, player.velocity.x < 0.0f ? SAMUS_WALK_LEFT : SAMUS_WALK_RIGHT);
 }
 
-/* ================================================================= *
- * Main Application Entry Point                                      *
- * ================================================================= */
+// ----- idle left state
+void enter_samus_idle_left_state(FSM *fsm)
+{
+    SpriteAnimation **current_animation = (SpriteAnimation **)fsm->context;
+    *current_animation = &samus.idle_left;
+}
+
+// ----- idle right state
+void enter_samus_idle_right_state(FSM *fsm)
+{
+    SpriteAnimation **current_animation = (SpriteAnimation **)fsm->context;
+    *current_animation = &samus.idle_right;
+}
+
+// ----- walk left state
+void enter_samus_walk_left_state(FSM *fsm)
+{
+    SpriteAnimation **current_animation = (SpriteAnimation **)fsm->context;
+    *current_animation = &samus.walk_left;
+}
+
+void step_samus_walk_left_state(FSM *fsm)
+{
+    if( (int) player.velocity.x == 0 )
+        fsm_change( fsm, SAMUS_IDLE_LEFT_STATE );
+}
+
+// ----- walk right state
+void enter_samus_walk_right_state(FSM *fsm)
+{
+    SpriteAnimation **current_animation = (SpriteAnimation **)fsm->context;
+    *current_animation = &samus.walk_right;
+}
+
+void step_samus_walk_right_state(FSM *fsm)
+{
+    if( (int) player.velocity.x == 0 )
+        fsm_change( fsm, SAMUS_IDLE_RIGHT_STATE );
+}
+
 int main(int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
 
-    if (!init_game_systems() || !init_player_assets()) {
+    SpriteAnimation *current_animation = NULL;
+    SpriteFrame samus_current_frame;
+
+    if (!init_game_systems() || !init_player_assets())
+    {
         close_render();
         return -1;
     }
 
-    const float display_sprite_w = (float)SUB_TILE_WIDTH * SPRITE_SCALE;
-    const float display_sprite_h = (float)SUB_TILE_HEIGHT * SPRITE_SCALE;
+    fsm_set_context(&player_fsm, (StateContext)&current_animation);
 
-    SpriteAnimation *current_animation = &samus.idle_right;
-    SpriteFrame samus_current_frame;
+    fsm_register(&player_fsm, SAMUS_IDLE_LEFT_STATE, (StateFSM){
+                                                            .enter = enter_samus_idle_left_state,
+                                                            .step = step_samus_check_idle_state
+                                                     });
+
+    fsm_register(&player_fsm, SAMUS_IDLE_RIGHT_STATE, (StateFSM){
+                                                            .enter = enter_samus_idle_right_state,
+                                                            .step = step_samus_check_idle_state
+                                                      });
+
+    fsm_register(&player_fsm, SAMUS_WALK_LEFT, (StateFSM){
+                                                            .enter = enter_samus_walk_left_state,
+                                                            .step = step_samus_walk_left_state
+                                                      });
+    
+    fsm_register(&player_fsm, SAMUS_WALK_RIGHT, (StateFSM){
+                                                            .enter = enter_samus_walk_right_state,
+                                                            .step = step_samus_walk_right_state
+                                                      });
+    
+    fsm_change(&player_fsm, SAMUS_IDLE_RIGHT_STATE);
+
 
     // Main Game Loop
     while (game_running)
@@ -162,18 +233,18 @@ int main(int argc, char *argv[])
         gamepad.update(NULL);
         update_physics();
 
-        update_animation(&current_animation, &samus_current_frame);
-            
+        fsm_step(&player_fsm);
+        update_sprite_animation(current_animation, &samus_current_frame);
+
         begin_frame();
 
         render_quad(
             (int)player.position.x, (int)player.position.y,
             display_sprite_w, display_sprite_h,
-            samus_current_frame.u1, samus_current_frame.v1, 
+            samus_current_frame.u1, samus_current_frame.v1,
             samus_current_frame.u2, samus_current_frame.v2,
             false, false,
-            0xFF808080, &samus.spritesheet.texture
-        );
+            0xFF808080, &samus.spritesheet.texture);
 
         draw();
     }
