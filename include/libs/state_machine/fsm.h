@@ -116,6 +116,23 @@ struct __tag_finite_state_machine_struct__
 };
 
 /**
+ * @brief Registers a state into the FSM using a StateFSM structure passed by value.
+ * 
+ * @param fsm Pointer to the FSM instance.
+ * @param id The StateID where the state will be registered.
+ * @param state StateFSM structure containing the lifecycle hooks (passed by copy).
+ * @return int Returns 0 on success, or -1 if parameters are invalid.
+ */
+static inline int fsm_register(FSM *fsm, StateID id, StateFSM state)
+{
+    if (!fsm || id < 0 || id >= MAX_STATES_PER_MACHINE)
+        return -1;
+
+    fsm->states[id] = state;
+    return 0;
+}
+
+/**
  * @brief Changes the active state of the FSM, executing lifecycle functions.
  * 
  * @details This function invokes the `close` method of the current state (if present),
