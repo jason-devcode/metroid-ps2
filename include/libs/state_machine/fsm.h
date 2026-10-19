@@ -20,7 +20,7 @@
  * enum { STATE_IDLE = 0, STATE_RUN };
  *
  * void idle_enter(FSM *fsm) { printf("Entered Idle\n"); }
- * void idle_step(FSM *fsm)  { 
+ * void idle_step(Fsm *fsm)  { 
  *     // Switch to run state conditionally
  *     fsm_change(fsm, STATE_RUN); 
  * }
@@ -31,9 +31,9 @@
  * int main(void) {
  *     FSM my_fsm = {0};
  *
- *     // Setup states
- *     my_fsm.states[STATE_IDLE] = (StateFSM){ .enter = idle_enter, .step = idle_step };
- *     my_fsm.states[STATE_RUN]  = (StateFSM){ .enter = run_enter,  .step = run_step  };
+ *     // Setup states using fsm_register
+ *     fsm_register(&my_fsm, STATE_IDLE, (StateFSM){ .enter = idle_enter, .step = idle_step });
+ *     fsm_register(&my_fsm, STATE_RUN,  (StateFSM){ .enter = run_enter,  .step = run_step  });
  *
  *     // Start machine at STATE_IDLE
  *     fsm_change(&my_fsm, STATE_IDLE);
@@ -59,7 +59,8 @@
  *
  * int main(void) {
  *     Player player_data = { .health = 100 };
- *     FSM fsm = { .context = &player_data };
+ *     FSM fsm = {0};
+ *     fsm_set_context(&fsm, &player_data);
  *     // ... configure and run steps ...
  * }
  * @endcode
@@ -130,6 +131,18 @@ static inline int fsm_register(FSM *fsm, StateID id, StateFSM state)
 
     fsm->states[id] = state;
     return 0;
+}
+
+/**
+ * @brief Sets or updates the user-defined context data pointer for the FSM.
+ * 
+ * @param fsm Pointer to the FSM instance.
+ * @param context Pointer to the user context data.
+ */
+static inline void fsm_set_context(FSM *fsm, StateContext context)
+{
+    if (fsm)
+        fsm->context = context;
 }
 
 /**
