@@ -91,8 +91,9 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
 
 Bajo el contexto de los videojuegos 2D podemos entender un tile/mosaico como una celda en una grilla o tabla la cual tiene propiedades especiales, estas propiedades definen su aspecto visual (textura), como reacciona cuando otros objetos interactuan con esta celda (colisiones), sus fisicas (si el tile tiene alguna componente de fisica) y como evoluciona a medida que fluye el juego. 
 
-### ¿Qué es un tilemap?
+### Historia de colisiones
 
-Un tilemap o mapa de mosaicos es la grilla de NxM mosaicos donde se coloca cada mosaico.
+El jugador puede moverse a través del mapa, saltar a plataformas más altas abrir puertas a otras partes del mapa, 
+
 
 

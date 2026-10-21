@@ -10,12 +10,12 @@
 #include <libs/math/vectorial.h>
 #include <libs/state_machine/fsm.h>
 
+#include <libs/world/world.h>
+
 #define ANALOG_CENTER_DIV 128.0f
 
 #define MOVEMENT_SPEED 350.0f
 #define FRICTION_COEFF 0.125f
-
-#define GRAVITY 1200
 
 typedef struct
 {
@@ -294,13 +294,23 @@ static void update_player_physics()
     player.position.y += player.velocity.y * deltatime;
 
     player.velocity.x *= FRICTION_COEFF;
-    player.velocity.y += GRAVITY * deltatime;
+    player.velocity.y += WORLD_GRAVITY * deltatime;
 
-    float level_floor = 400.0f;
-
-    if (player.position.y + SUB_TILE_HEIGHT * 2 >= level_floor)
+    if (player.position.x < WORLD_LEFT_CORNER_X )
     {
-        player.position.y = level_floor - SUB_TILE_HEIGHT * 2;
+        player.position.x = WORLD_LEFT_CORNER_X;
+        player.velocity.x = 0.0f;
+    }
+
+    if (player.position.x + SUB_TILE_WIDTH > WORLD_RIGHT_CORNER_X )
+    {
+        player.position.x = WORLD_RIGHT_CORNER_X - SUB_TILE_WIDTH - 1;
+        player.velocity.x = 0.0f;
+    }
+
+    if (player.position.y + SUB_TILE_HEIGHT >= WORLD_RIGHT_CORNER_Y )
+    {
+        player.position.y = WORLD_RIGHT_CORNER_Y - SUB_TILE_HEIGHT;
         player.velocity.y = 0.0f;
     }
 }
