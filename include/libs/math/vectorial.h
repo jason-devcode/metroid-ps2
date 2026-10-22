@@ -16,7 +16,7 @@
  *
  * This structure uses an anonymous union to allow accessing the same 2D data
  * through different semantic naming conventions (spatial coordinates, texture coordinates,
- * generic pairs, or raw arrays).
+ * dimensions, generic pairs, or raw arrays).
  *
  * @par Use cases:
  *
@@ -28,6 +28,11 @@
  * **For texture coordinates:**
  *   ```c
  *   float texel[2] = { v.u * tex->w, v.v * tex->h };
+ *   ```
+ *
+ * **For dimensions (width and height):**
+ *   ```c
+ *   float size[2] = { v.w, v.h };
  *   ```
  *
  * **For general pair float use cases:**
@@ -45,6 +50,10 @@ typedef union
     struct
     {
         float u, v; /**< Texture coordinates. */
+    };
+    struct
+    {
+        float w, h; /**< Dimensions (width and height). */
     };
     struct
     {
