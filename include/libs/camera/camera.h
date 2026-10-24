@@ -31,6 +31,7 @@ typedef struct __tag_camera_2d_structure__
 {
     float zoom;                       /**< World zoom scale factor */
     vec2f position;                   /**< Current center position of the camera in world space */
+    vec2f screen_position; // posicion de la camara en la pantalla
     vec2f dimensions;                 /**< Width and height of the camera viewport in pixels */
     vec2f half_dimensions;            /**< Half of the viewport dimensions */
     CameraWorldBounds bounds;         /**< Rectangular movement constraints within the world */
@@ -51,6 +52,7 @@ static inline void create_camera(
     Camera *camera,
     float zoom,
     vec2f position,
+    vec2f screen_position,
     vec2f dimensions,
     CameraWorldBounds world_bounds,
     CameraChaseTargetCallback chase_callback)
@@ -60,6 +62,7 @@ static inline void create_camera(
 
     camera->zoom = zoom;
     camera->position = position;
+    camera->screen_position = screen_position;
     camera->dimensions = dimensions;
     camera->bounds = world_bounds;
     camera->chase_callback = chase_callback;
@@ -156,8 +159,8 @@ static inline void world_coords_to_camera_coords(Camera *camera, vec2f *world_po
 {
     if (!camera || !world_pos || !output)
         return;
-    output->x = camera->half_dimensions.w + (world_pos->x - camera->position.x) * camera->zoom;
-    output->y = camera->half_dimensions.h + (world_pos->y - camera->position.y) * camera->zoom;
+    output->x = camera->screen_position.x + camera->half_dimensions.w + (world_pos->x - camera->position.x) * camera->zoom;
+    output->y = camera->screen_position.y + camera->half_dimensions.h + (world_pos->y - camera->position.y) * camera->zoom;
 }
 
 #endif // LIB_CAMERA_H
