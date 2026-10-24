@@ -12,6 +12,10 @@
 #include <libs/render/render.h>
 #include <libs/performance/fps.h>
 
+#include <libs/camera/camera.h>
+
+#include <libs/render/shapes.h>
+
 #include "samus.h"
 
 /* ================================================================= *
@@ -73,7 +77,6 @@ void create_square_texture(Texture *rect_texture)
  *
  */
 
-#include <libs/camera/camera.h>
 
 void camera_chase_player(vec2f *camera_position)
 {
@@ -98,9 +101,10 @@ int main(int argc, char **argv)
 
     create_camera(
         &camera,
-        3.5f, // Con esto ajustamos el zoom de la camara
-        (vec2f){{0.0f, 0.0f}},
-        (vec2f){{(float)SCREEN_WIDTH, (float)SCREEN_HEIGHT}},
+        1.8f, // Con esto ajustamos el zoom de la camara
+        (vec2f){{ 0.0f, 0.0f }},
+        (vec2f){{(float)SCREEN_WIDTH / 8, (float)SCREEN_HEIGHT / 8}},
+        (vec2f){{(float)SCREEN_WIDTH / 1.25, (float)SCREEN_HEIGHT / 1.25}},
         (CameraWorldBounds){
             .left_top_corner = (vec2f){{WORLD_LEFT_CORNER_X, WORLD_LEFT_CORNER_Y}},
             .right_bottom_corner = (vec2f){{WORLD_RIGHT_CORNER_X, WORLD_RIGHT_CORNER_Y}}},
@@ -122,23 +126,38 @@ int main(int argc, char **argv)
         world_coords_to_camera_coords(&camera, &player.position, &player_camera_coords);
 
         begin_frame();
+        reset_shape_memory_arena();
 
-        render_quad(
-            0, 0,
-            camera.dimensions.w, camera.dimensions.h,
-            0, 0,
-            rect_texture.Width, rect_texture.Height,
-            false, false,
-            0xFFFFA000, &rect_texture);
+        render_line_shape(
+            (ShapeLine){ 
+                (vec2f){{ 0.0f, 0.0f }}, 
+                (vec2f){{ 300.0f, 300.0f }}, 
+                RGB(255,0,0) 
+            }
+        );
+
+        // render_quad(
+        //     camera.screen_position.x, camera.screen_position.y,
+        //     camera.dimensions.w, camera.dimensions.h,
+        //     0, 0,
+        //     rect_texture.Width, rect_texture.Height,
+        //     false, false,
+        //     0xFFFFA000, &rect_texture);
 
         // Draw camera box
-        render_quad(
-            0, 0,
-            camera.half_dimensions.w, camera.half_dimensions.h,
-            0, 0,
-            rect_texture.Width, rect_texture.Height,
-            false, false,
-            0xFF300030, &rect_texture);
+        // render_quad(
+        //     camera.screen_position.x, camera.screen_position.y,
+        //     camera.half_dimensions.w, camera.half_dimensions.h,
+        //     0, 0,
+        //     rect_texture.Width, rect_texture.Height,
+        //     false, false,
+        //     0xFF300030, &rect_texture);
+
+        render_rectangle(
+            camera.screen_position.x, camera.screen_position.y,
+            camera.screen_position.x + camera.half_dimensions.w, camera.screen_position.y + camera.half_dimensions.h,
+            0xFFFF0000
+        );
 
         render_quad(
             (int)player_camera_coords.x, (int)player_camera_coords.y,
