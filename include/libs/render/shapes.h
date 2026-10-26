@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <gsKit.h>
 
 #include <libs/math/vectorial.h>
 
@@ -100,18 +101,20 @@ static inline void register_shape_to_draw(ShapeType type, void *data, int32_t si
 
     current_shape->type = type;
 
+    byte* frame_data_destination = (byte *)current_shape->shape_frame_data;
+    byte* frame_data_source = (byte *)data;
+
     // Copy shape data to memory arena block
     for (int32_t data_iterator = 0; data_iterator < size; ++data_iterator)
-        ((byte *)current_shape->shape_frame_data)[data_iterator] = ((byte *)data)[data_iterator];
+        *frame_data_destination++ = *frame_data_source++;
 
     ++shape_counter;
 }
 
-
 enum SHAPE_TYPE
 {
     GS_LINE,
-    GS_END_SHAPE_TYPE // <- Usado para el tamaño del arreglo de funciones puntero
+    GS_SHAPE_DRAW_FUNCTIONS_COUNT // <- Usado para el tamaño del arreglo de funciones puntero
 };
 
 /* 
@@ -130,5 +133,45 @@ static inline void render_line_shape(const ShapeLine line_data)
 {
     register_shape_to_draw( GS_LINE, (void*)&line_data, SHAPE_STRUCT_LINE_SIZE );
 }
+
+static inline uint64_t pack_gs_color(uint32_t color);
+
+
+static void shape_draw_call_simple_line( GSGLOBAL* gs_global, ShapeLine* line_data )
+{
+    gsKit_prim_line(
+                gs_global,
+                line_data->A.x, line_data->A.y,
+                line_data->B.x, line_data->B.y, 0,
+                pack_gs_color(line_data->color));
+}
+
+
+typedef void (*ShapeDrawFunction)( GSGLOBAL* gs_global, void* shape_data );
+
+ShapeDrawFunction shape_functions_draw_calls[ GS_SHAPE_DRAW_FUNCTIONS_COUNT ];
+
+static inline void initialize_draw_shapes_system() {
+    shape_functions_draw_calls[ GS_LINE ] = (ShapeDrawFunction) shape_draw_call_simple_line;
+}
+
+
+static inline void render_all_shapes( GSGLOBAL* gs_global ) {
+    for (int i = 0; i < shape_counter; ++i)
+    {
+        Shape *current_shape = &shapes[i];
+        
+        ShapeDrawFunction shape_draw_function = shape_functions_draw_calls[ current_shape->type ];
+
+        if (!shape_draw_function) continue;
+        
+        void *draw_shape_data = current_shape->shape_frame_data;
+
+        shape_draw_function( gs_global, draw_shape_data );
+    }
+}
+
+
+
 
 #endif // LIB_SHAPES_RENDER_MANAGEMENT_H

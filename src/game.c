@@ -45,39 +45,6 @@ static bool init_game_systems(void)
     return true;
 }
 
-void create_square_texture(Texture *rect_texture)
-{
-
-    const int rect_w = 32;
-    const int rect_h = 32;
-    uint32_t rect_data_raw_image[rect_w * rect_h];
-
-    for (int y = 0; y < rect_h; y++)
-    {
-        for (int x = 0; x < rect_w; x++)
-        {
-            int index = y * rect_w + x;
-
-            // Si está en el borde exterior, asigna blanco; si no, transparente/vacío
-            if (x == 0 || x == rect_w - 1 || y == 0 || y == rect_h - 1)
-            {
-                rect_data_raw_image[index] = 0xFFFFFFFF; // Borde (blanco visible)
-            }
-            else
-            {
-                rect_data_raw_image[index] = 0x00000000; // Centro vacío (transparente)
-            }
-        }
-    }
-
-    create_texture(rect_texture, rect_w, rect_h, rect_data_raw_image);
-}
-
-/**
- *
- */
-
-
 void camera_chase_player(vec2f *camera_position)
 {
     camera_position->x = player.position.x;
@@ -110,9 +77,6 @@ int main(int argc, char **argv)
             .right_bottom_corner = (vec2f){{WORLD_RIGHT_CORNER_X, WORLD_RIGHT_CORNER_Y}}},
         camera_chase_player);
 
-    Texture rect_texture;
-    create_square_texture(&rect_texture);
-
     vec2f player_camera_coords = (vec2f){{0.0f, 0.0f}};
 
     // Main Game Loop
@@ -128,35 +92,25 @@ int main(int argc, char **argv)
         begin_frame();
         reset_shape_memory_arena();
 
-        render_line_shape(
-            (ShapeLine){ 
-                (vec2f){{ 0.0f, 0.0f }}, 
-                (vec2f){{ 300.0f, 300.0f }}, 
-                RGB(255,0,0) 
-            }
-        );
-
-        // render_quad(
-        //     camera.screen_position.x, camera.screen_position.y,
-        //     camera.dimensions.w, camera.dimensions.h,
-        //     0, 0,
-        //     rect_texture.Width, rect_texture.Height,
-        //     false, false,
-        //     0xFFFFA000, &rect_texture);
-
-        // Draw camera box
-        // render_quad(
-        //     camera.screen_position.x, camera.screen_position.y,
-        //     camera.half_dimensions.w, camera.half_dimensions.h,
-        //     0, 0,
-        //     rect_texture.Width, rect_texture.Height,
-        //     false, false,
-        //     0xFF300030, &rect_texture);
-
+        
         render_rectangle(
             camera.screen_position.x, camera.screen_position.y,
             camera.screen_position.x + camera.half_dimensions.w, camera.screen_position.y + camera.half_dimensions.h,
             0xFFFF0000
+        );
+
+        // Draw camera box
+        render_rectangle(
+            camera.screen_position.x, camera.screen_position.y,
+            camera.screen_position.x + camera.dimensions.w, camera.screen_position.y + camera.dimensions.h,
+            0xFF00FFFF
+        );
+
+        // Draw player hitbox
+        render_rectangle(
+            player_camera_coords.x, player_camera_coords.y,
+            player_camera_coords.x + display_sprite_w * camera.zoom, player_camera_coords.y + display_sprite_h * camera.zoom,
+            0xFF808080
         );
 
         render_quad(
@@ -166,15 +120,6 @@ int main(int argc, char **argv)
             player.current_frame.u2, player.current_frame.v2,
             false, false,
             0xFF808080, &samus.spritesheet.texture);
-
-        // Draw player hitbox
-        render_quad(
-            (int)player_camera_coords.x, (int)player_camera_coords.y,
-            display_sprite_w * camera.zoom, display_sprite_h * camera.zoom,
-            0, 0,
-            rect_texture.Width, rect_texture.Height,
-            false, false,
-            0xFF808080, &rect_texture);
 
         draw();
     }

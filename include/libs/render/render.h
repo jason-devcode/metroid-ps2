@@ -115,6 +115,8 @@ static bool init_render(int width, int height)
 
     printf("gsKit Batched Quad rendering successfully initialized on PS2!\n");
 
+    initialize_draw_shapes_system();
+
     game_running = true;
     return true;
 }
@@ -169,10 +171,11 @@ static void render_quad(float x, float y, float w, float h, float u1, float v1, 
 
 static inline void render_line(float x1, float y1, float x2, float y2, uint32_t color)
 {
-    // Si la macro de gsKit_prim_line espera 7 argumentos, añade un 0 o el argumento que falte:
-    gsKit_prim_line(gs_global, x1, y1, x2, y2, 0, pack_gs_color(color));
-    // O si prefieres usar la versión 3D que ya descubriste:
-    // gsKit_prim_line_3d(gs_global, x1, y1, 0, x2, y2, 0, pack_gs_color(color));
+    render_line_shape(
+        (ShapeLine){
+            (vec2f){{x1, y1}},
+            (vec2f){{x2, y2}},
+            color});
 }
 
 static inline void render_rectangle(float x1, float y1, float x2, float y2, uint32_t color)
@@ -224,20 +227,7 @@ static void draw()
                                   pack_gs_color(q->color));
     }
 
-    for (int i = 0; i < shape_counter; ++i)
-    {
-        Shape *current_shape = &shapes[i];
-        if (current_shape->type == GS_LINE)
-        {
-            ShapeLine *line_data = (ShapeLine *)current_shape->shape_frame_data;
-            gsKit_prim_line(
-                gs_global, 
-                line_data->A.x, line_data->A.y, 
-                line_data->B.x, line_data->B.y, 0, 
-                pack_gs_color(line_data->color)
-            );
-        }
-    }
+    render_all_shapes( gs_global );
 
     /* 3. Execute command queue and swap hardware buffers synchronized with VSync. */
     gsKit_queue_exec(gs_global);
