@@ -14,7 +14,7 @@
 
 #define ANALOG_CENTER_DIV 128.0f
 
-#define MOVEMENT_SPEED 350.0f
+#define MOVEMENT_SPEED 225.0f
 #define FRICTION_COEFF 0.125f
 
 typedef struct

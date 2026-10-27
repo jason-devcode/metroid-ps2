@@ -74,6 +74,8 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
         - [x] Añadir soporte para contexto personalizado de datos (`StateContext` / `void*`) para evitar variables globales.
         - [x] Proveer funciones `static inline` para evitar errores de enlace múltiple (*linker errors*).
         - [x] Documentar completamente el código con estándares de Doxygen en inglés, incluyendo casos de uso prácticos.
+    - [x] Implementar el sistema de camara y transformacion de coordenadas de mundo a coordenadas de pantalla.
+    
 
 
 ## Fase 3 - Entidades

@@ -15,6 +15,8 @@
 #include <gsKit.h>
 #include <dmaKit.h>
 
+#include <libs/engine/engine_properties.h>
+
 #include <libs/shapes/shapes.h>
 
 /** @brief Color depth specification in bits per pixel (32-bit ABGR/RGBA). */
@@ -39,9 +41,6 @@ static uint64_t gs_clear_color = 0;
 
 /** @brief Global flag indicating whether the game/render loop is currently active. */
 static bool game_running = false;
-
-/** @brief Internal gsKit and DMA context. */
-static GSGLOBAL *gs_global = NULL;
 
 /**
  * @brief Structure representing a renderable textured quad in the batch system.
@@ -175,6 +174,9 @@ static void render_quad(float x, float y, float w, float h, float u1, float v1, 
 static void begin_frame()
 {
     quad_batch_count = 0;
+    gsKit_queue_reset(gs_global->CurQueue);
+    /* 1. Clear the hidden buffer in VRAM via hardware. */
+    gsKit_clear(gs_global, gs_clear_color);
 }
 
 /**
@@ -185,16 +187,14 @@ static void draw()
     if (!gs_global || !game_running)
         return;
 
-    gsKit_queue_reset(gs_global->CurQueue);
-
-    /* 1. Clear the hidden buffer in VRAM via hardware. */
-    gsKit_clear(gs_global, gs_clear_color);
-
+    
     /* Clean and direct configuration for alpha channel without restrictive tests that could cause freezes. */
     gsKit_set_primalpha(
         gs_global,
         GS_SETREG_ALPHA(0, 1, 0, 1, 0),
         0);
+
+    render_all_shapes( gs_global );
 
     /* 2. Draw all quads registered in the batch with a single logical call. */
     for (int i = 0; i < quad_batch_count; i++)
@@ -210,7 +210,6 @@ static void draw()
                                   pack_gs_color(q->color));
     }
 
-    render_all_shapes( gs_global );
 
     /* 3. Execute command queue and swap hardware buffers synchronized with VSync. */
     gsKit_queue_exec(gs_global);

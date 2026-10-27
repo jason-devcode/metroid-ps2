@@ -13,6 +13,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <libs/engine/engine_properties.h>
+
+
 /* ============================================================================
  * CONFIGURATION CONSTANTS & MACROS
  * ============================================================================ */
@@ -21,7 +24,7 @@
 #define SHAPE_MEMORY_CHUNK_SIZE 4
 
 /** @brief Maximum number of chunks available in the memory arena. */
-#define SHAPE_MAX_MEMORY_CHUNKS 256
+#define SHAPE_MAX_MEMORY_CHUNKS 512
 
 /** @brief Total size of the shape memory arena in bytes (1024 bytes). */
 #define SHAPE_MEMORY_ARENA_SIZE (SHAPE_MEMORY_CHUNK_SIZE * SHAPE_MAX_MEMORY_CHUNKS)
@@ -47,7 +50,6 @@ typedef struct __tag_shape_memory_allocation__
     void *shape_frame_data; /**< Pointer to the shape's specific data in the memory arena. */
     ShapeType type;         /**< The type classification of the registered shape. */
 } Shape;
-
 
 /* ============================================================================
  * GLOBAL STATE VARIABLES
@@ -138,6 +140,8 @@ static inline bool allocate_shape_memory_arena(void **data, int32_t size)
     return true;
 }
 
+static inline void render_all_shapes(GSGLOBAL*);
+
 /**
  * @brief Registers a shape to be drawn during the current frame rendering pass.
  * 
@@ -153,7 +157,11 @@ static inline void register_shape_to_draw(ShapeType type, void *data, int32_t si
     Shape *current_shape = &shapes[shape_counter];
 
     if (!allocate_shape_memory_arena(&current_shape->shape_frame_data, size))
-        return;
+    {
+        render_all_shapes( gs_global );
+        reset_shape_memory_arena();
+        allocate_shape_memory_arena(&current_shape->shape_frame_data, size);
+    }
 
     current_shape->type = type;
 

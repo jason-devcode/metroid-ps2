@@ -51,6 +51,8 @@ void camera_chase_player(vec2f *camera_position)
     camera_position->y = player.position.y;
 }
 
+#include "tilemap.h"
+
 int main(int argc, char **argv)
 {
     (void)argc;
@@ -70,9 +72,7 @@ int main(int argc, char **argv)
     create_camera(
         &camera,
         2.0f, // Con esto ajustamos el zoom de la camara
-        (vec2f){{0.0f, 0.0f}},
-        // (vec2f){{(float)SCREEN_WIDTH / 8, (float)SCREEN_HEIGHT / 8}},
-        // (vec2f){{(float)SCREEN_WIDTH / 1.25, (float)SCREEN_HEIGHT / 1.25}},
+        (vec2f){{0.0f,0.0f}},
         (vec2f){{0.0f,0.0f}},
         (vec2f){{SCREEN_WIDTH, SCREEN_HEIGHT}},
         (CameraWorldBounds){
@@ -95,35 +95,19 @@ int main(int argc, char **argv)
         begin_frame();
         reset_shape_memory_arena();
 
-        render_rectangle(
-            camera.screen_position.x, camera.screen_position.y,
-            camera.screen_position.x + camera.half_dimensions.w, camera.screen_position.y + camera.half_dimensions.h,
-            0xFFFF0000);
+        draw_tilemap( &camera );
 
         // Draw camera box
         render_rectangle(
             camera.screen_position.x, camera.screen_position.y,
             camera.screen_position.x + camera.dimensions.w - 1, camera.screen_position.y + camera.dimensions.h - 1,
-            0xFF00FFFF);
+            0xFF0000FF);
 
         // Draw player hitbox
         render_rectangle(
             player_camera_coords.x, player_camera_coords.y,
             player_camera_coords.x + display_sprite_w * camera.zoom, player_camera_coords.y + display_sprite_h * camera.zoom,
             0xFF808080);
-
-        render_circle_shape(
-            (ShapeCircle){
-                .center = {{SCREEN_WIDTH >> 1, SCREEN_HEIGHT >> 1}},
-                .radius = 90.0f,
-                .color = 0xFFFFFF00});
-
-        render_triangle_wire_shape((ShapeTriangle){
-            .A = {{ 100.0f, 100.0f }},
-            .B = {{ 400.0f, 200.0f }},
-            .C = {{ 200.0f, 400.0f }},
-            .color = 0xFF00FFFF
-        });
 
         render_quad(
             (int)player_camera_coords.x, (int)player_camera_coords.y,
