@@ -1,19 +1,17 @@
-/**
- * @file shapes.h
- * @brief Geometric shape render management system for PS2 using gsKit.
- * 
- * This module provides a memory arena and command submission pipeline for 
- * rendering 2D geometric shapes efficiently per frame.
- */
+#ifndef LIB_SHAPE_MEMORY_ARENA_H
+#define LIB_SHAPE_MEMORY_ARENA_H
 
-#ifndef LIB_SHAPES_RENDER_MANAGEMENT_H
-#define LIB_SHAPES_RENDER_MANAGEMENT_H
+/**
+ * @file shape_memory_arena.h
+ * @brief Memory arena allocation and buffer management for PS2 geometric shapes.
+ * 
+ * This module provides a lightweight linear memory arena and tracking structures 
+ * to store and manage raw geometry shape data efficiently per frame.
+ */
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <gsKit.h>
-#include <libs/math/vectorial.h>
 
 /* ============================================================================
  * CONFIGURATION CONSTANTS & MACROS
@@ -50,30 +48,6 @@ typedef struct __tag_shape_memory_allocation__
     ShapeType type;         /**< The type classification of the registered shape. */
 } Shape;
 
-/**
- * @brief Geometric contract structure defining a line shape's memory layout.
- */
-typedef struct __tag_shape_line_contract__
-{
-    vec2f A;         /**< Starting 2D point of the line. */
-    vec2f B;         /**< Ending 2D point of the line. */
-    uint32_t color;  /**< Packed color of the line. */
-} ShapeLine;
-
-/** @brief Macro evaluating the exact memory footprint of a ShapeLine structure. */
-#define SHAPE_STRUCT_LINE_SIZE sizeof(ShapeLine)
-
-/**
- * @brief Supported shape type enumeration identifiers.
- */
-enum SHAPE_TYPE
-{
-    GS_LINE,                       /**< Simple line primitive type. */
-    GS_SHAPE_DRAW_FUNCTIONS_COUNT  /**< Total count of shape types used for array sizing. */
-};
-
-/** @brief Function pointer signature for drawing a registered shape. */
-typedef void (*ShapeDrawFunction)(GSGLOBAL* gs_global, void* shape_data);
 
 /* ============================================================================
  * GLOBAL STATE VARIABLES
@@ -90,20 +64,6 @@ static Shape shapes[MAX_SHAPES_PER_FRAME] = {0};
 
 /** @brief Counter tracking how many shapes have been registered in the current frame. */
 static int32_t shape_counter = 0;
-
-/** @brief Function pointer table mapping shape types to their respective draw implementations. */
-static ShapeDrawFunction shape_functions_draw_calls[GS_SHAPE_DRAW_FUNCTIONS_COUNT];
-
-/* ============================================================================
- * FORWARD DECLARATIONS
- * ============================================================================ */
-
-/**
- * @brief Packs a standard color into a gsKit-compatible format.
- * @param color The raw 32-bit color value.
- * @return uint64_t The GS-compatible packed color.
- */
-static inline uint64_t pack_gs_color(uint32_t color);
 
 /* ============================================================================
  * MEMORY MANAGEMENT FUNCTIONS
@@ -197,74 +157,14 @@ static inline void register_shape_to_draw(ShapeType type, void *data, int32_t si
 
     current_shape->type = type;
 
-    // Copy shape data securely into the memory arena block using standard memcpy
-    memcpy(current_shape->shape_frame_data, data, size);
+    byte* frame_data_destination = (byte *)current_shape->shape_frame_data;
+    byte* frame_data_source = (byte *)data;
+
+    // Copy shape data to memory arena block
+    for (int32_t data_iterator = 0; data_iterator < size; ++data_iterator)
+        *frame_data_destination++ = *frame_data_source++;
 
     ++shape_counter;
 }
 
-/* ============================================================================
- * DRAW CALL IMPLEMENTATIONS
- * ============================================================================ */
-
-/**
- * @brief Draw call implementation for rendering a simple line primitive via gsKit.
- * 
- * @param gs_global Pointer to the gsKit global context.
- * @param line_data Pointer to the ShapeLine structure containing coordinates and color.
- */
-static void shape_draw_call_simple_line(GSGLOBAL* gs_global, ShapeLine* line_data)
-{
-    gsKit_prim_line(
-        gs_global,
-        line_data->A.x, line_data->A.y,
-        line_data->B.x, line_data->B.y, 0,
-        pack_gs_color(line_data->color)
-    );
-}
-
-/* ============================================================================
- * PUBLIC INTERFACE & SYSTEM FUNCTIONS
- * ============================================================================ */
-
-/**
- * @brief Submits a line shape to the render queue for the current frame.
- * 
- * @param line_data The ShapeLine structure containing line endpoints and color.
- */
-static inline void render_line_shape(const ShapeLine line_data)
-{
-    register_shape_to_draw(GS_LINE, (void*)&line_data, SHAPE_STRUCT_LINE_SIZE);
-}
-
-/**
- * @brief Initializes the shape rendering system and binds draw call handlers.
- */
-static inline void initialize_draw_shapes_system(void)
-{
-    shape_functions_draw_calls[GS_LINE] = (ShapeDrawFunction)shape_draw_call_simple_line;
-}
-
-/**
- * @brief Iterates through all registered shapes and executes their draw calls.
- * 
- * @param gs_global Pointer to the gsKit global context.
- */
-static inline void render_all_shapes(GSGLOBAL* gs_global)
-{
-    for (int i = 0; i < shape_counter; ++i)
-    {
-        Shape *current_shape = &shapes[i];
-        
-        ShapeDrawFunction shape_draw_function = shape_functions_draw_calls[current_shape->type];
-
-        if (!shape_draw_function) 
-            continue;
-        
-        void *draw_shape_data = current_shape->shape_frame_data;
-
-        shape_draw_function(gs_global, draw_shape_data);
-    }
-}
-
-#endif // LIB_SHAPES_RENDER_MANAGEMENT_H
+#endif // LIB_SHAPE_MEMORY_ARENA_H

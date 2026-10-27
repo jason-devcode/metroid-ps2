@@ -15,7 +15,7 @@
 #include <gsKit.h>
 #include <dmaKit.h>
 
-#include <libs/render/shapes.h>
+#include <libs/shapes/shapes.h>
 
 /** @brief Color depth specification in bits per pixel (32-bit ABGR/RGBA). */
 #define PIXELS_BPP 32

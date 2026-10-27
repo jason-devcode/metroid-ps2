@@ -14,7 +14,7 @@
 
 #include <libs/camera/camera.h>
 
-#include <libs/render/shapes.h>
+#include <libs/shapes/shapes.h>
 
 #include "samus.h"
 
@@ -62,16 +62,19 @@ int main(int argc, char **argv)
         return -1;
     }
 
+
     // Esto es el codigo beta de la camara
 
     Camera camera;
 
     create_camera(
         &camera,
-        1.8f, // Con esto ajustamos el zoom de la camara
-        (vec2f){{ 0.0f, 0.0f }},
-        (vec2f){{(float)SCREEN_WIDTH / 8, (float)SCREEN_HEIGHT / 8}},
-        (vec2f){{(float)SCREEN_WIDTH / 1.25, (float)SCREEN_HEIGHT / 1.25}},
+        1.0f, // Con esto ajustamos el zoom de la camara
+        (vec2f){{0.0f, 0.0f}},
+        // (vec2f){{(float)SCREEN_WIDTH / 8, (float)SCREEN_HEIGHT / 8}},
+        // (vec2f){{(float)SCREEN_WIDTH / 1.25, (float)SCREEN_HEIGHT / 1.25}},
+        (vec2f){{0.0f,0.0f}},
+        (vec2f){{SCREEN_WIDTH, SCREEN_HEIGHT}},
         (CameraWorldBounds){
             .left_top_corner = (vec2f){{WORLD_LEFT_CORNER_X, WORLD_LEFT_CORNER_Y}},
             .right_bottom_corner = (vec2f){{WORLD_RIGHT_CORNER_X, WORLD_RIGHT_CORNER_Y}}},
@@ -92,26 +95,35 @@ int main(int argc, char **argv)
         begin_frame();
         reset_shape_memory_arena();
 
-        
         render_rectangle(
             camera.screen_position.x, camera.screen_position.y,
             camera.screen_position.x + camera.half_dimensions.w, camera.screen_position.y + camera.half_dimensions.h,
-            0xFFFF0000
-        );
+            0xFFFF0000);
 
         // Draw camera box
         render_rectangle(
             camera.screen_position.x, camera.screen_position.y,
-            camera.screen_position.x + camera.dimensions.w, camera.screen_position.y + camera.dimensions.h,
-            0xFF00FFFF
-        );
+            camera.screen_position.x + camera.dimensions.w - 1, camera.screen_position.y + camera.dimensions.h - 1,
+            0xFF00FFFF);
 
         // Draw player hitbox
         render_rectangle(
             player_camera_coords.x, player_camera_coords.y,
             player_camera_coords.x + display_sprite_w * camera.zoom, player_camera_coords.y + display_sprite_h * camera.zoom,
-            0xFF808080
-        );
+            0xFF808080);
+
+        render_circle_shape(
+            (ShapeCircle){
+                .center = {{SCREEN_WIDTH >> 1, SCREEN_HEIGHT >> 1}},
+                .radius = 90.0f,
+                .color = 0xFFFFFF00});
+
+        render_triangle_wire_shape((ShapeTriangle){
+            .A = {{ 100.0f, 100.0f }},
+            .B = {{ 400.0f, 200.0f }},
+            .C = {{ 200.0f, 400.0f }},
+            .color = 0xFF00FFFF
+        });
 
         render_quad(
             (int)player_camera_coords.x, (int)player_camera_coords.y,
