@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 
     create_camera(
         &camera,
-        1.0f, // Con esto ajustamos el zoom de la camara
+        2.0f, // Con esto ajustamos el zoom de la camara
         (vec2f){{0.0f, 0.0f}},
         // (vec2f){{(float)SCREEN_WIDTH / 8, (float)SCREEN_HEIGHT / 8}},
         // (vec2f){{(float)SCREEN_WIDTH / 1.25, (float)SCREEN_HEIGHT / 1.25}},

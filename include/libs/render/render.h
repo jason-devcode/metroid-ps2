@@ -169,23 +169,6 @@ static void render_quad(float x, float y, float w, float h, float u1, float v1, 
     q->texture = texture;
 }
 
-static inline void render_line(float x1, float y1, float x2, float y2, uint32_t color)
-{
-    render_line_shape(
-        (ShapeLine){
-            (vec2f){{x1, y1}},
-            (vec2f){{x2, y2}},
-            color});
-}
-
-static inline void render_rectangle(float x1, float y1, float x2, float y2, uint32_t color)
-{
-    render_line(x1, y1, x2, y1, color);
-    render_line(x2, y1, x2, y2, color);
-    render_line(x2, y2, x1, y2, color);
-    render_line(x1, y2, x1, y1, color);
-}
-
 /**
  * @brief Clears the frame batch list at the beginning of a new frame.
  */

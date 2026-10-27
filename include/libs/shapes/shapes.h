@@ -29,6 +29,7 @@ enum SHAPE_TYPE
 {
     GS_LINE,                       /**< Simple line primitive type. */
     GS_CIRCLE,                     /**< Circle primitive type using line segments. */
+    GS_RECTANGLE,
     GS_TRIANGLE_WIRE,              /**< Wireframe triangle primitive type. */
     GS_SHAPE_DRAW_FUNCTIONS_COUNT  /**< Total count of shape types used for array sizing. */
 };
@@ -62,7 +63,6 @@ static inline void render_all_shapes(GSGLOBAL* gs_global)
     }
 }
 
-
 /**
  * @brief Geometric contract structure defining a line shape's memory layout.
  */
@@ -92,6 +92,52 @@ static void shape_draw_call_simple_line(GSGLOBAL* gs_global, ShapeLine* line_dat
     );
 }
 
+/**
+ * @brief Geometric contract structure defining a rectangle shape's memory layout.
+ */
+typedef struct __tag_shape_rectangle_contract__
+{
+    vec2f left_top_corner;     /**< Starting 2D point of the rectangle. */
+    vec2f right_bottom_corner; /**< Ending 2D point of the rectangle. */
+    uint32_t color;            /**< Packed color of the line. */
+} ShapeRectangle;
+
+/** @brief Macro evaluating the exact memory footprint of a ShapeRectangle structure. */
+#define SHAPE_STRUCT_RECTANGLE_SIZE sizeof(ShapeRectangle)
+
+/**
+ * @brief Draw call implementation for rendering a rectangle primitive via gsKit.
+ * 
+ * @param gs_global Pointer to the gsKit global context.
+ * @param retangle_data Pointer to the ShapeRectangle structure containing coordinates and color.
+ */
+static void shape_draw_call_rectangle(GSGLOBAL* gs_global, ShapeRectangle* retangle_data)
+{
+    gsKit_prim_line(
+        gs_global,
+        retangle_data->left_top_corner.x, retangle_data->left_top_corner.y,
+        retangle_data->right_bottom_corner.x, retangle_data->left_top_corner.y, 0,
+        pack_gs_color(retangle_data->color)
+    );
+    gsKit_prim_line(
+        gs_global,
+        retangle_data->right_bottom_corner.x, retangle_data->left_top_corner.y,
+        retangle_data->right_bottom_corner.x, retangle_data->right_bottom_corner.y, 0,
+        pack_gs_color(retangle_data->color)
+    );
+    gsKit_prim_line(
+        gs_global,
+        retangle_data->right_bottom_corner.x, retangle_data->right_bottom_corner.y,
+        retangle_data->left_top_corner.x, retangle_data->right_bottom_corner.y, 0,
+        pack_gs_color(retangle_data->color)
+    );
+    gsKit_prim_line(
+        gs_global,
+        retangle_data->left_top_corner.x, retangle_data->right_bottom_corner.y,
+        retangle_data->left_top_corner.x, retangle_data->left_top_corner.y, 0,
+        pack_gs_color(retangle_data->color)
+    );
+}
 
 /**
  * @brief Geometric contract structure defining a triangle shape's memory layout.
@@ -209,12 +255,32 @@ static inline void render_triangle_wire_shape(const ShapeTriangle triangle_data)
 }
 
 /**
+ * @brief Submits a rectangle shape to the render queue for the current frame.
+ * 
+ * @param rectangle_data The ShapeRectangle structure containing vertices and color.
+ */
+static inline void render_rectangle_shape(const ShapeRectangle rectangle_data)
+{
+    register_shape_to_draw(GS_RECTANGLE, (void*)&rectangle_data, SHAPE_STRUCT_RECTANGLE_SIZE);
+}
+
+static inline void render_rectangle(float x1, float y1, float x2, float y2, uint32_t color)
+{
+    render_rectangle_shape((ShapeRectangle){
+        .left_top_corner     = (vec2f){{ x1, y1 }},
+        .right_bottom_corner = (vec2f){{ x2, y2 }},
+        .color = color
+    });
+}
+
+/**
  * @brief Initializes the shape rendering system and binds draw call handlers.
  */
 static inline void initialize_draw_shapes_system(void)
 {
     shape_functions_draw_calls[GS_LINE]          = (ShapeDrawFunction)shape_draw_call_simple_line;
     shape_functions_draw_calls[GS_CIRCLE]        = (ShapeDrawFunction)shape_draw_call_circle;
+    shape_functions_draw_calls[GS_RECTANGLE]     = (ShapeDrawFunction)shape_draw_call_rectangle;
     shape_functions_draw_calls[GS_TRIANGLE_WIRE] = (ShapeDrawFunction)shape_draw_call_triangle_wire;
 }
 
