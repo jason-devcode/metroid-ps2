@@ -64,9 +64,6 @@ int main(int argc, char **argv)
         return -1;
     }
 
-
-    // Esto es el codigo beta de la camara
-
     Camera camera;
 
     create_camera(

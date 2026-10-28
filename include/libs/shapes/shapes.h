@@ -14,6 +14,9 @@
 #include <libs/math/vectorial.h>
 #include <libs/shapes/shape_memory_arena.h>
 
+// Este fichero de cabecera define la instancia global para la gestion del Graphics Synthetizer
+#include <libs/engine/engine_properties.h>
+
 /**
  * @brief Packs a standard color into a gsKit-compatible format.
  * 
@@ -273,6 +276,10 @@ static inline void render_rectangle(float x1, float y1, float x2, float y2, uint
     });
 }
 
+static void render_all_shapes_callback() {
+  render_all_shapes( gs_global );
+}
+
 /**
  * @brief Initializes the shape rendering system and binds draw call handlers.
  */
@@ -282,7 +289,9 @@ static inline void initialize_draw_shapes_system(void)
     shape_functions_draw_calls[GS_CIRCLE]        = (ShapeDrawFunction)shape_draw_call_circle;
     shape_functions_draw_calls[GS_RECTANGLE]     = (ShapeDrawFunction)shape_draw_call_rectangle;
     shape_functions_draw_calls[GS_TRIANGLE_WIRE] = (ShapeDrawFunction)shape_draw_call_triangle_wire;
-}
 
+    // Configuramos el callback de la logica de negocio a ejecutar en el streaming de memoria.
+    shape_set_memory_streaming_callback( render_all_shapes_callback );
+}
 
 #endif // LIB_SHAPES_DRAW_IMPLEMENTATIONS_H

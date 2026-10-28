@@ -13,9 +13,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <libs/engine/engine_properties.h>
-
-
 /* ============================================================================
  * CONFIGURATION CONSTANTS & MACROS
  * ============================================================================ */
@@ -143,6 +140,27 @@ static inline bool allocate_shape_memory_arena(void **data, int32_t size)
 static inline void render_all_shapes(GSGLOBAL*);
 
 /**
+ * Vamos a separar la logica del streaming de memoria y el dibujado de las figuras geometricas.
+ *
+ * Para eso vamos a utilizar un sistema basado en callbacks o eventos, cuando se produce el evento
+ * de liberacion de arena de memoria llamaremos al callback para ejecutar la logica de dibujado
+ * que configuraremos desde otro lugar, de este modo evitaremos acoplar logica de negocio en la 
+ * gestion de la arena de memoria.
+ */
+
+// Definimos el tipo de funcion puntero para el callback
+typedef void (*MemoryArenaStreamingCallback)( void );
+
+// Definimos el callback
+static MemoryArenaStreamingCallback shape_memory_streaming_event = NULL;
+
+// Definimos una funcion setter que es la que llamaremos desde otros sitios para definir la logica de negocio.
+static inline void shape_set_memory_streaming_callback( MemoryArenaStreamingCallback callback ) {
+  if( !callback ) return;
+  shape_memory_streaming_event = callback;
+}
+
+/**
  * @brief Registers a shape to be drawn during the current frame rendering pass.
  * 
  * @param type The type identifier of the shape.
@@ -158,7 +176,8 @@ static inline void register_shape_to_draw(ShapeType type, void *data, int32_t si
 
     if (!allocate_shape_memory_arena(&current_shape->shape_frame_data, size))
     {
-        render_all_shapes( gs_global );
+        if( shape_memory_streaming_event ) shape_memory_streaming_event();
+
         reset_shape_memory_arena();
         allocate_shape_memory_arena(&current_shape->shape_frame_data, size);
     }
