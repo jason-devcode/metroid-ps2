@@ -22,7 +22,7 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
 - [x] Crear y subir el repositorio del proyecto.
 
 ## Fase 2 - Turing Engine PS2
-- [ ] Desarrollar las utilidades del motor del juego para cumplir los requisitos minimos de las historias de usuario.
+- [x] Desarrollar las utilidades del motor del juego para cumplir los requisitos minimos de las historias de usuario.
     - [x] Desarrollar un sistema básico de calculos vectoriales 2D.
         - [X] Crear un directorio llamado libs en el directorio include.
         - [X] Crear un directorio llamado math dentro del directorio libs.
@@ -75,10 +75,20 @@ Quiero que mi personaje pueda colisionar con los tiles del mapa a traves de sus 
         - [x] Proveer funciones `static inline` para evitar errores de enlace múltiple (*linker errors*).
         - [x] Documentar completamente el código con estándares de Doxygen en inglés, incluyendo casos de uso prácticos.
     - [x] Implementar el sistema de camara y transformacion de coordenadas de mundo a coordenadas de pantalla.
-    
+    - [x] Implementar un sistema de dibujado de figuras geométricas simples mediante un sistema de pooling con un patrón de arenas de memoria y streaming de dibujado en tiempo real.
 
+## Fase 3 - Sistema de colisiones
 
-## Fase 3 - Entidades
+- [ ] Implementar un sistema de detección de colisiones flexible y escalable que se integre con cualquier patrón de manejo de entidades.
+    - [ ] Inicialmente se implementara un algoritmo de comprobación de colisiones de todos contra todos de modo que el sistema sea practico en un principio.
+    - [ ] El sistema de detección de colisiones no definirá como los objetos reaccionaran, solo calculara cuando un objeto colisionable (collider) colisiona con otro.
+    - [ ] El usuario(programador) es quien define como los objetos en su juego reaccionarán a las colisiones, no el propio motor de colisiones.
+    - [ ] Implementar el sistema de registro de funciones a la escucha (listeners) que definen la lógica que se debe de ejecutar cuando ocurre una colisión.
+    - [ ] El sistema debe permitir establecer capas de colisión a través de mascaras binarias (bitmasks) mediante las cuales se podrán discriminar la detección
+    de las colisiones entre capas.
+    - [ ] El sistema debe de permitir integrar colisiones de cajas y de triangulos rectangulos para cajas.
+
+## Fase 4 - Entidades
 - [ ] Desarrollar lo minimo necesario del sistema de entidades para crear una estructura Player mediante la cual podamos controlar a una entidad jugador.
     - [ ] Crear una estructura Entity.
     - [ ] Crear una estructura de física.    
