@@ -1,0 +1,17 @@
+--target=mips64el-unknown-elf
+-mabi=n32
+-mcpu=mips3
+-msingle-float
+-nostdlibinc
+-D_EE
+-D__R5900__
+-DNDEBUG
+-G0
+-Iinclude
+-I.vscode/ps2sdk-headers/ports
+-I.vscode/ps2sdk-headers/ports/SDL
+-I.vscode/ps2sdk-headers/gskit
+-I.vscode/ps2sdk-headers/ee/include
+-I.vscode/ps2sdk-headers/common/include
+-isystem.vscode/ps2sdk-headers/ee-gcc/include-fixed
+-isystem.vscode/ps2sdk-headers/ee-newlib

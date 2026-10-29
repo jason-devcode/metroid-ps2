@@ -1,19 +1,29 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "PS2 EE",
             "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/.vscode/ps2sdk-headers/common",
-                "${workspaceFolder}/.vscode/ps2sdk-headers/ee",
-                "${workspaceFolder}/.vscode/ps2sdk-headers/iop",
-                "/usr/include/SDL"
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/ports",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/ports/SDL",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/gskit",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/ee/include",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/common/include",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/iop/include",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/ee-gcc/include",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/ee-gcc/include-fixed",
+                "${workspaceFolder}/.vscode/ps2sdk-headers/ee-newlib"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c11",
+            "defines": [
+                "_EE",
+                "__R5900__",
+                "NDEBUG"
+            ],
+            "cStandard": "gnu17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-gcc-x64"
+            "intelliSenseMode": "gcc-x86",
+            "compilerPath": ""
         }
     ],
     "version": 4
